@@ -1,0 +1,21 @@
+{
+    "short_name": "Dude",
+    "name": "Dude Example Site",
+    "icons": [
+      {
+        "src": "/static/dude-192.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "/static/dude-512.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "start_url": "/",
+    "background_color": "white",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#3b4628"
+  }
