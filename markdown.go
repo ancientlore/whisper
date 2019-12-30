@@ -7,11 +7,20 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
+	"github.com/pelletier/go-toml"
 	"github.com/russross/blackfriday/v2"
 )
+
+type FrontMatter struct {
+	Title    string    `toml:"title" comment:"Title of this page"`
+	Date     time.Time `toml:"date" comment:"Date the article appears"`
+	Template string    `toml:"template" comment:"The name of the template to use"`
+	Tags     []string  `toml:"tags" comment:"Tags to assign to this article"`
+}
 
 type Page struct {
 	Name     string
@@ -19,9 +28,8 @@ type Page struct {
 }
 
 type Section struct {
-	Name   string
-	Pages  []Page
-	Active bool
+	Name  string
+	Pages []Page
 }
 
 func (obj Section) Filename() string {
@@ -32,10 +40,10 @@ func (obj Section) Filename() string {
 }
 
 type Data struct {
-	Sections      []Section
-	Content       template.HTML
-	ActiveSection *Section
-	ActivePage    *Page
+	FrontMatter FrontMatter
+	Content     template.HTML
+	Sections    []Section
+	ActivePage  *Page
 }
 
 func markdown(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +74,8 @@ func markdown(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html")
 	w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
-	y := blackfriday.Run(x)
+	fm, rst := extractFrontMatter(x)
+	y := blackfriday.Run(rst)
 	var data = Data{
 		Sections: []Section{
 			{
@@ -79,9 +88,29 @@ func markdown(w http.ResponseWriter, r *http.Request) {
 		},
 		Content: template.HTML(y),
 	}
+	if len(fm) > 0 {
+		err = toml.Unmarshal(fm, &data.FrontMatter)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 	err = tpl.ExecuteTemplate(w, "default", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+var fmRegexp = regexp.MustCompile(`(?m)^\s*\+\+\+\s*$`)
+
+func extractFrontMatter(x []byte) (fm, r []byte) {
+	subs := fmRegexp.Split(string(x), 3)
+	if len(subs) != 3 {
+		return nil, x
+	}
+	if s := strings.TrimSpace(subs[0]); len(s) > 0 {
+		return nil, x
+	}
+	return []byte(strings.TrimSpace(subs[1])), []byte(strings.TrimSpace(subs[2]))
 }

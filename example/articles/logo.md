@@ -1,3 +1,8 @@
++++
+title = "About the Dude Logo"
+tags = [ "logo" ]
+date = 2019-12-29T23:20:00Z
++++
 # Our Logo
 
 About our logo

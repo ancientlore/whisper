@@ -1,3 +1,6 @@
++++
+title = "Dude!"
++++
 # Welcome
 Welcome to the sample site!
 
