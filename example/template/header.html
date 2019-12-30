@@ -1,3 +1,4 @@
+{{define "header"}}
 <!doctype html>
 <html ⚡ lang="en">
   <head>
@@ -5,8 +6,8 @@
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Dude Example Site">
     <link rel="preload" as="script" href="https://cdn.ampproject.org/v0.js">
-    <link rel="preload" href="static/dude-logo.png" as="image">
-    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="preload" href="/static/dude-logo.png" as="image">
+    <link rel="shortcut icon" href="/static/favicon.ico">
     <script async src="https://cdn.ampproject.org/v0.js"></script>
     <!-- Import other AMP Extensions here -->
     <script async custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js"></script>
@@ -26,7 +27,7 @@
  
     <link rel="canonical" href=".">
     <title>Dude{{with .ActivePage}}{{if ne .Filename "index.html"}} - {{.Name}}{{end}}{{end}}</title>
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/static/manifest.json">
     <script type="application/ld+json">{{with .ActivePage}}
     {
       "@context": "http://schema.org",
@@ -58,7 +59,7 @@
     <!-- Start Navbar -->
     <header class="ampstart-headerbar fixed flex justify-start items-center top-0 left-0 right-0 pl2 pr4" id="header">
         <div role="button" on="tap:sidebar.toggle" tabindex="0" class="ampstart-navbar-trigger pr2">☰</div>
-        <amp-img src="static/dude-logo.png" width="150" height="50" layout="fixed" class="my0 mx-auto" alt="Dude"></amp-img>
+        <amp-img src="/static/dude-logo.png" width="150" height="50" layout="fixed" class="my0 mx-auto" alt="Dude"></amp-img>
     </header>
     <amp-sidebar id="sidebar" class="ampstart-sidebar px3" layout="nodisplay" side="left">
         <div class="flex justify-start items-center ampstart-sidebar-header">
@@ -68,28 +69,9 @@
             {{range .Sections}}
             <h3>{{.Name}}</h3>
             <p>{{range .Pages}}
-            <a href="{{if ne .Filename "index.html"}}{{.Filename}}{{else}}/{{end}}">{{.Name}}</a><br/>
+            <a href="{{if ne .Filename "index"}}{{.Filename}}{{else}}/{{end}}">{{.Name}}</a><br/>
             {{end}}</p>
             {{end}}
         </div>
     </amp-sidebar>
-    <div class="content">{{.Content}}</div>
-    <footer class="ampstart-footer flex flex-column items-center p3">
-        Copyright &copy; 2019-2020 Michael D. Lore
-    </footer>
-    <amp-analytics type="gtag" data-credentials="include">
-    <script type="application/json">
-    {
-      "vars" : {
-        "gtag_id": "UA-XXXXXX-X",
-        "config" : {
-          "UA-XXXXXX-X": {
-            "groups": "default"
-          }
-        }
-      }
-    }
-    </script>
-    </amp-analytics>
-  </body>
-</html>
+    {{end}}
