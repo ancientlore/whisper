@@ -47,7 +47,8 @@ func markdown(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasSuffix(fn, ".md") {
 		fn += ".md"
 	}
-	s, err := os.Stat(path.Join(d, fn))
+	fn = path.Join(d, fn)
+	s, err := os.Stat(fn)
 	if errors.Is(err, os.ErrNotExist) {
 		http.NotFound(w, r)
 		return

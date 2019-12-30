@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+SITEMAP: http://dude.ancientlore.io/sitemap.txt

@@ -7,7 +7,7 @@
     <meta name="description" content="Dude Example Site">
     <link rel="preload" as="script" href="https://cdn.ampproject.org/v0.js">
     <link rel="preload" href="/static/dude-logo.png" as="image">
-    <link rel="shortcut icon" href="/static/favicon.ico">
+    <link rel="shortcut icon" href="/favicon.ico">
     <script async src="https://cdn.ampproject.org/v0.js"></script>
     <!-- Import other AMP Extensions here -->
     <script async custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js"></script>
@@ -27,18 +27,18 @@
  
     <link rel="canonical" href=".">
     <title>Dude{{with .ActivePage}}{{if ne .Filename "index.html"}} - {{.Name}}{{end}}{{end}}</title>
-    <link rel="manifest" href="/static/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <script type="application/ld+json">{{with .ActivePage}}
     {
       "@context": "http://schema.org",
       "@type": "Webpage",
-      "url": "http://dude.ancientlore.io/{{if ne .Filename "index.html"}}{{.Filename}}{{end}}",
+      "url": "http://dude.ancientlore.io/{{if ne .Filename "index"}}{{.Filename}}{{end}}",
       "name": "Dude",
       "headline": "Dude",
       "description": "Dude Example Site",
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": "http://dude.ancientlore.io/{{if ne .Filename "index.html"}}{{.Filename}}{{end}}"
+        "@id": "http://dude.ancientlore.io/{{if ne .Filename "index"}}{{.Filename}}{{end}}"
       },
       "publisher": {
         "@type": "Person",

@@ -70,7 +70,10 @@ func main() {
 	}
 
 	// Setup handlers
-	http.Handle("/favicon.ico", http.HandlerFunc(favicon))
+	http.Handle("/favicon.ico", cacheClient.Middleware(fixed("favicon.ico")))
+	http.Handle("/ads.txt", cacheClient.Middleware(fixed("ads.txt")))
+	http.Handle("/robots.txt", cacheClient.Middleware(fixed("robots.txt")))
+	http.Handle("/manifest.json", cacheClient.Middleware(fixed("manifest.json")))
 	http.Handle("/sitemap.txt", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(sitemap))))
 	http.Handle("/static/", cacheClient.Middleware(http.StripPrefix("/static/", http.FileServer(http.Dir("static")))))
 	http.Handle("/", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(markdown))))
