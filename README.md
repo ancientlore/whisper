@@ -14,7 +14,7 @@ See the [example](example) folder for a sample site layout. Where possible, conv
 
 ## Markdown
 
-Web pages are generally written in Markdown and use HTML templates to render into the site. The default template to use is called `default`; templates are stored in the `template` folder.
+Web pages are generally written in Markdown and use HTML templates to render into the site. The default template to use is called `default`; you must have a `default` and a `notfound` template. Templates are stored in the `template` folder.
 
 Markdown may contain *front matter* which is in TOML format. The front matter is delimited by `+++` at the start and end. For example:
 
