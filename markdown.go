@@ -15,7 +15,8 @@ import (
 	"github.com/russross/blackfriday/v2"
 )
 
-type FrontMatter struct {
+// frontMatter holds data scraped from a Markdown page.
+type frontMatter struct {
 	Title    string    `toml:"title" comment:"Title of this page"`
 	Date     time.Time `toml:"date" comment:"Date the article appears"`
 	Template string    `toml:"template" comment:"The name of the template to use"`
@@ -40,67 +41,69 @@ func (obj Section) Filename() string {
 }
 
 type Data struct {
-	FrontMatter FrontMatter
+	FrontMatter frontMatter
 	Content     template.HTML
 	Sections    []Section
 	ActivePage  *Page
 }
 
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
-func markdown(w http.ResponseWriter, r *http.Request) {
-	d, fn := path.Split(r.URL.Path)
-	if fn == "" {
-		fn = "index.md"
-	}
-	d = strings.TrimPrefix(d, "/")
-	if !strings.HasSuffix(fn, ".md") {
-		fn += ".md"
-	}
-	fn = path.Join(d, fn)
-	s, err := os.Stat(fn)
-	if errors.Is(err, os.ErrNotExist) {
-		http.NotFound(w, r)
-		return
-	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	x, err := ioutil.ReadFile(fn)
-	if errors.Is(err, os.ErrNotExist) {
-		http.NotFound(w, r)
-		return
-	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html")
-	w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
-	fm, rst := extractFrontMatter(x)
-	y := blackfriday.Run(rst)
-	var data = Data{
-		Sections: []Section{
-			{
-				Name: "Home",
-				Pages: []Page{
-					{Name: "Index", Filename: "index"},
-					{Name: "About", Filename: "about"},
+func markdown(defaultHanlder http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		d, fn := path.Split(r.URL.Path)
+		if fn == "" {
+			fn = "index.md"
+		}
+		d = strings.TrimPrefix(d, "/")
+		if !strings.HasSuffix(fn, ".md") {
+			fn += ".md"
+		}
+		fn = path.Join(d, fn)
+		s, err := os.Stat(fn)
+		if errors.Is(err, os.ErrNotExist) {
+			defaultHanlder.ServeHTTP(w, r)
+			return
+		} else if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		x, err := ioutil.ReadFile(fn)
+		if errors.Is(err, os.ErrNotExist) {
+			http.NotFound(w, r)
+			return
+		} else if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
+		fm, rst := extractFrontMatter(x)
+		y := blackfriday.Run(rst)
+		var data = Data{
+			Sections: []Section{
+				{
+					Name: "Home",
+					Pages: []Page{
+						{Name: "Index", Filename: "index"},
+						{Name: "About", Filename: "about"},
+					},
 				},
 			},
-		},
-		Content: template.HTML(y),
-	}
-	if len(fm) > 0 {
-		err = toml.Unmarshal(fm, &data.FrontMatter)
+			Content: template.HTML(y),
+		}
+		if len(fm) > 0 {
+			err = toml.Unmarshal(fm, &data.FrontMatter)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		err = tpl.ExecuteTemplate(w, "default", data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
-	err = tpl.ExecuteTemplate(w, "default", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	})
 }
 
 // fmRegexp is the regular expression used to split out front matter.

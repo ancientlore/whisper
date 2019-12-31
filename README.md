@@ -4,11 +4,11 @@ A web server mainly oriented at media serving for small websites.
 
 ## Conventions
 
+In general, whisper serves static content from the location it's found - making it easy to structure your site how you want. There is special handling for certain content like Markdown files.
+
 See the [example](example) folder for a sample site layout. Where possible, conventions are used instead of configuration files. Conventions used by this server include:
 
-* The `static` folder holds static content like images or JavaScript.
-* The `template` folder holds HTML templates, using Go's `html/template` package.
-* Certain files in the root are served directly if present: `ads.txt`, `favicon.ico`, `manifest.json`, and `robots.txt`.
+* The `template` folder holds HTML templates, using Go's `html/template` package. These templates are used for rendering content but never served directly.
 * A sitemap is automatically created and rendered as `/sitemap.txt`.
 * The default page for a folder is `index.md`.
 
@@ -33,4 +33,6 @@ title    | string           | Title of page
 date     | time             | Publish date
 tags     | array of strings | Tags for the article
 template | string           | Override the template
+
+Front matter is used for sorting and constructing lists of articles.
 
