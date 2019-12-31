@@ -80,7 +80,7 @@ func main() {
 
 	// Setup handlers
 	http.Handle("/template/", http.HandlerFunc(notFound))
-	http.Handle("/", cacheClient.Middleware(gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir(".")))))))
+	http.Handle("/", cacheClient.Middleware(gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(specialFileHidingFileSystem{http.Dir(".")}))))))
 
 	// Create signal handler for graceful shutdown
 	go func() {
