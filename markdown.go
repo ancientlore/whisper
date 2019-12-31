@@ -109,6 +109,11 @@ func markdown(defaultHandler http.Handler) http.Handler {
 				return
 			}
 		}
+		// Check date - don't render until date/time is passed
+		if time.Now().Before(data.FrontMatter.Date) {
+			notFound(w, r)
+			return
+		}
 		// Set headers
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
