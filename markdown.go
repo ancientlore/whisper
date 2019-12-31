@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
@@ -15,57 +14,18 @@ import (
 	"github.com/russross/blackfriday/v2"
 )
 
-// frontMatter holds data scraped from a Markdown page.
-type frontMatter struct {
-	Title    string    `toml:"title" comment:"Title of this page"`
-	Date     time.Time `toml:"date" comment:"Date the article appears"`
-	Template string    `toml:"template" comment:"The name of the template to use"`
-	Tags     []string  `toml:"tags" comment:"Tags to assign to this article"`
-}
-
-/*
-Goals of this
-- Render menu in groups
-- Include most recent article in home page
-- Include most recent comic in home page
-- Render list of articles (pagination of some sort?)
-- Render list of comics somehow
-- Include most recent N article(s) in menu
-- Inlucde most recent N comic(c) in menu
-- Dynamically detect new files
-*/
-
-type Page struct {
-	Name     string
+// pageInfo has information about the current page.
+type pageInfo struct {
+	Path     string
 	Filename string
-	// Date
-
 }
 
-type Section struct {
-	Name  string // Title
-	Pages []Page // Sorted by reverse date
-
-}
-
-type Site struct {
-	// All tags to pages map
-	// All sections
-
-}
-
-func (obj Section) Filename() string {
-	if obj.Pages != nil && len(obj.Pages) > 0 {
-		return obj.Pages[0].Filename
-	}
-	return ""
-}
-
-type Data struct {
+// data is what is passed to makedown templates.
+type data struct {
 	FrontMatter frontMatter
+	Page        pageInfo
 	Content     template.HTML
 	Sections    []Section
-	ActivePage  *Page
 }
 
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
@@ -111,7 +71,8 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		// format the markdown
 		y := blackfriday.Run(rst)
 		// prepare template data
-		var data = Data{
+		_, bn := path.Split(r.URL.Path)
+		var data = data{
 			Sections: []Section{
 				{
 					Name: "Home",
@@ -120,6 +81,10 @@ func markdown(defaultHandler http.Handler) http.Handler {
 						{Name: "About", Filename: "about"},
 					},
 				},
+			},
+			Page: pageInfo{
+				Path:     r.URL.Path,
+				Filename: bn,
 			},
 			Content: template.HTML(y),
 		}
@@ -145,19 +110,4 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			return
 		}
 	})
-}
-
-// fmRegexp is the regular expression used to split out front matter.
-var fmRegexp = regexp.MustCompile(`(?m)^\s*\+\+\+\s*$`)
-
-// extractFrontMatter splits the front matter and Markdown content.
-func extractFrontMatter(x []byte) (fm, r []byte) {
-	subs := fmRegexp.Split(string(x), 3)
-	if len(subs) != 3 {
-		return nil, x
-	}
-	if s := strings.TrimSpace(subs[0]); len(s) > 0 {
-		return nil, x
-	}
-	return []byte(strings.TrimSpace(subs[1])), []byte(strings.TrimSpace(subs[2]))
 }
