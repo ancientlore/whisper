@@ -48,37 +48,48 @@ type Data struct {
 }
 
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
-func markdown(defaultHanlder http.Handler) http.Handler {
+func markdown(defaultHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// split path and file
 		d, fn := path.Split(r.URL.Path)
 		if fn == "" {
 			fn = "index.md"
 		}
+		// check if extension is non-empty and not Markdown
+		ext := path.Ext(fn)
+		if ext != "" && ext != ".md" {
+			defaultHandler.ServeHTTP(w, r)
+			return
+		}
+		// Prepare markdown physical file name
 		d = strings.TrimPrefix(d, "/")
 		if !strings.HasSuffix(fn, ".md") {
 			fn += ".md"
 		}
 		fn = path.Join(d, fn)
+		// See if the markdown file exists
 		s, err := os.Stat(fn)
 		if errors.Is(err, os.ErrNotExist) {
-			defaultHanlder.ServeHTTP(w, r)
+			defaultHandler.ServeHTTP(w, r)
 			return
 		} else if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		// Read the markdown content
 		x, err := ioutil.ReadFile(fn)
 		if errors.Is(err, os.ErrNotExist) {
-			http.NotFound(w, r)
+			notFound(w, r)
 			return
 		} else if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "text/html")
-		w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
+		// extract front matter
 		fm, rst := extractFrontMatter(x)
+		// format the markdown
 		y := blackfriday.Run(rst)
+		// prepare template data
 		var data = Data{
 			Sections: []Section{
 				{
@@ -98,6 +109,10 @@ func markdown(defaultHanlder http.Handler) http.Handler {
 				return
 			}
 		}
+		// Set headers
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
+		// Render the HTML template
 		err = tpl.ExecuteTemplate(w, "default", data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
