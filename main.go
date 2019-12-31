@@ -24,16 +24,23 @@ var tpl *template.Template
 func main() {
 	// Setup flags
 	var (
-		fPort     = flag.Int("port", 8080, "Port to listen on.")
-		fRoot     = flag.String("root", ".", "Root of web site.")
-		fCacheTTL = flag.Duration("cachettl", 10*time.Minute, "Cache TTL.")
+		fPort              = flag.Int("port", 8080, "Port to listen on.")
+		fReadTimeout       = flag.Duration("readtimeout", 5*time.Second, "HTTP server read timeout.")
+		fReadHeaderTimeout = flag.Duration("readheadertimeout", 3*time.Second, "HTTP server read header timeout.")
+		fWriteTimeout      = flag.Duration("writetimeout", 10*time.Second, "HTTP server write timeout.")
+		fRoot              = flag.String("root", ".", "Root of web site.")
+		fCacheTTL          = flag.Duration("cachettl", 10*time.Minute, "Cache TTL.")
+		fCacheSize         = flag.Int("cachesize", 1000, "Cache capacity (number of items).")
 	)
 	flag.Parse()
 	flagenv.Parse()
 
 	// Create HTTP server
 	var srv = http.Server{
-		Addr: fmt.Sprintf(":%d", *fPort),
+		Addr:              fmt.Sprintf(":%d", *fPort),
+		ReadTimeout:       *fReadTimeout,
+		WriteTimeout:      *fWriteTimeout,
+		ReadHeaderTimeout: *fReadHeaderTimeout,
 	}
 
 	// Switch to site folder
@@ -53,7 +60,7 @@ func main() {
 	// Initialize HTTP ache
 	memcache, err := memory.NewAdapter(
 		memory.AdapterWithAlgorithm(memory.LRU),
-		memory.AdapterWithCapacity(1000),
+		memory.AdapterWithCapacity(*fCacheSize),
 	)
 	if err != nil {
 		fmt.Println(err)
