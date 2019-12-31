@@ -46,6 +46,7 @@ type Data struct {
 	ActivePage  *Page
 }
 
+// markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
 func markdown(w http.ResponseWriter, r *http.Request) {
 	d, fn := path.Split(r.URL.Path)
 	if fn == "" {
@@ -102,8 +103,10 @@ func markdown(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// fmRegexp is the regular expression used to split out front matter.
 var fmRegexp = regexp.MustCompile(`(?m)^\s*\+\+\+\s*$`)
 
+// extractFrontMatter splits the front matter and Markdown content.
 func extractFrontMatter(x []byte) (fm, r []byte) {
 	subs := fmRegexp.Split(string(x), 3)
 	if len(subs) != 3 {

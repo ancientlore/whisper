@@ -19,8 +19,10 @@ import (
 	"github.com/victorspringer/http-cache/adapter/memory"
 )
 
+// tpl stores the site's HTML templates.
 var tpl *template.Template
 
+// main is where it all begins.
 func main() {
 	// Setup flags
 	var (
