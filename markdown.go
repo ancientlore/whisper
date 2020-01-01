@@ -104,7 +104,11 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
 		// Render the HTML template
-		err = tpl.ExecuteTemplate(w, "default", data)
+		templateName := "default"
+		if data.FrontMatter.Template != "" {
+			templateName = data.FrontMatter.Template
+		}
+		err = tpl.ExecuteTemplate(w, templateName, data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

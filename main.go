@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -53,7 +54,12 @@ func main() {
 	}
 
 	// Parse templates
-	tpl, err = template.ParseGlob("template/*.html")
+	funcMap := template.FuncMap{
+		// The name "title" is what the function will be called in the template text.
+		"dir":  dir,
+		"join": path.Join,
+	}
+	tpl, err = template.New("whisper").Funcs(funcMap).ParseGlob("template/*.html")
 	if err != nil {
 		log.Printf("Cannot parse templates: %s", err)
 		os.Exit(2)

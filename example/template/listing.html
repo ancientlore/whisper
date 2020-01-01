@@ -1,0 +1,11 @@
+{{define "listing"}}
+{{template "header" .}}
+<div class="content">
+    {{.Content}}
+    <ul>
+    {{ $p := .Page.Path}}{{range dir .Page.Path}}
+    <li><a href="{{join $p .Filename}}">{{.FrontMatter.Title}}</a></li>
+    {{end}}</ul>
+</div>
+{{template "footer" .}}
+{{end}}
