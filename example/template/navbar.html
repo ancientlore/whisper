@@ -16,6 +16,9 @@
             </p>
             <h3>Recent Articles</h3>
             <p>
+                {{range $i, $a := dir "/articles"}}{{if lt $i 5}}
+                <a href="{{join "/articles" .Filename}}">{{.FrontMatter.Title}}</a><br/>
+                {{end}}{{end}}<br/>
                 <a href="/articles">Article Index</a><br/>
             </p>
         </div>
