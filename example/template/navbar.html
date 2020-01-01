@@ -1,0 +1,23 @@
+{{define "navbar"}}
+    <!-- Start Navbar -->
+    <header class="ampstart-headerbar fixed flex justify-start items-center top-0 left-0 right-0 pl2 pr4" id="header">
+        <div role="button" on="tap:sidebar.toggle" tabindex="0" class="ampstart-navbar-trigger pr2">☰</div>
+        <amp-img src="/static/dude-logo.png" width="150" height="50" layout="fixed" class="my0 mx-auto" alt="Dude"></amp-img>
+    </header>
+    <amp-sidebar id="sidebar" class="ampstart-sidebar px3" layout="nodisplay" side="left">
+        <div class="flex justify-start items-center ampstart-sidebar-header">
+            <div role="button" on="tap:sidebar.toggle" tabindex="0" class="ampstart-navbar-trigger items-start">✕</div>
+        </div>
+        <div>
+            <h3>Dude!</h3>
+            <p>
+                <a href="/">Home</a><br/>
+                <a href="/about">About</a><br/>
+            </p>
+            <h3>Recent Articles</h3>
+            <p>
+                <a href="/articles">Article Index</a><br/>
+            </p>
+        </div>
+    </amp-sidebar>
+{{end}}
