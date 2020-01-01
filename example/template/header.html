@@ -66,10 +66,10 @@
             <div role="button" on="tap:sidebar.toggle" tabindex="0" class="ampstart-navbar-trigger items-start">✕</div>
         </div>
         <div>
-            {{range .Sections}}
-            <h3>{{.Name}}</h3>
+            {{range .Folders}}
+            <h3>{{.Title}}</h3>
             <p>{{range .Pages}}
-            <a href="{{if ne .Filename "index"}}{{.Filename}}{{else}}/{{end}}">{{.Name}}</a><br/>
+            <a href="{{if ne .Filename "index"}}{{.Filename}}{{else}}/{{end}}">{{.Title}}</a><br/>
             {{end}}</p>
             {{end}}
         </div>

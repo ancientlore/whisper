@@ -25,7 +25,7 @@ type data struct {
 	FrontMatter frontMatter
 	Page        pageInfo
 	Content     template.HTML
-	Sections    []Section
+	Folders     []folder
 }
 
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
@@ -73,12 +73,12 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		// prepare template data
 		_, bn := path.Split(r.URL.Path)
 		var data = data{
-			Sections: []Section{
+			Folders: []folder{
 				{
-					Name: "Home",
-					Pages: []Page{
-						{Name: "Index", Filename: "index"},
-						{Name: "About", Filename: "about"},
+					Title: "Home",
+					Pages: []page{
+						{Title: "Index", Filename: "index"},
+						{Title: "About", Filename: "about"},
 					},
 				},
 			},

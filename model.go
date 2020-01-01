@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 /*
 Goals of this
 - Render menu in groups
@@ -8,32 +10,24 @@ Goals of this
 - Render list of articles (pagination of some sort?)
 - Render list of comics somehow
 - Include most recent N article(s) in menu
-- Inlucde most recent N comic(c) in menu
+- Include most recent N comic(c) in menu
 - Dynamically detect new files
 */
 
-type Page struct {
-	Name     string
+type page struct {
+	Title    string
 	Filename string
-	// Date
-
+	Date     time.Time
 }
 
-type Section struct {
-	Name  string // Title
-	Pages []Page // Sorted by reverse date
-
+type folder struct {
+	Title    string
+	Filename string
+	Pages    []page // Sorted by reverse date
 }
 
-func (obj Section) Filename() string {
-	if obj.Pages != nil && len(obj.Pages) > 0 {
-		return obj.Pages[0].Filename
-	}
-	return ""
-}
-
-type Site struct {
-	// All tags to pages map
+type site struct {
+	TaggedPages map[string][]page
 	// All sections
 
 }
