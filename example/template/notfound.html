@@ -2,7 +2,8 @@
 {{template "header" .}}
 <div class="content">
     <h1>Nothing to see here dude!</h1>
-    <amp-img src="/static/dude-192.png" layout="intrinsic" width="192" height="192"/>
+    <p><amp-img src="/static/dude-192.png" layout="intrinsic" width="192" height="192"/></p>
+    <p>You tried to access {{join .Page.Path .Page.Filename}}</p>
 </div>
 {{template "footer" .}}
 {{end}}

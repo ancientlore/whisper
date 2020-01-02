@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"html/template"
 	"io/ioutil"
@@ -90,18 +91,20 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			notFound(w, r)
 			return
 		}
-		// Set headers
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
 		// Render the HTML template
 		templateName := "default"
 		if data.FrontMatter.Template != "" {
 			templateName = data.FrontMatter.Template
 		}
-		err = tpl.ExecuteTemplate(w, templateName, data)
+		var out bytes.Buffer
+		err = tpl.ExecuteTemplate(&out, templateName, data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		// Set headers
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		// w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
+		http.ServeContent(w, r, "", s.ModTime(), bytes.NewReader(out.Bytes()))
 	})
 }

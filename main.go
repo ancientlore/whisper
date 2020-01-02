@@ -16,8 +16,6 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/facebookgo/flagenv"
-	cache "github.com/victorspringer/http-cache"
-	"github.com/victorspringer/http-cache/adapter/memory"
 )
 
 // tpl stores the site's HTML templates.
@@ -32,8 +30,6 @@ func main() {
 		fReadHeaderTimeout = flag.Duration("readheadertimeout", 5*time.Second, "HTTP server read header timeout.")
 		fWriteTimeout      = flag.Duration("writetimeout", 30*time.Second, "HTTP server write timeout.")
 		fRoot              = flag.String("root", ".", "Root of web site.")
-		fCacheTTL          = flag.Duration("cachettl", 10*time.Minute, "Cache TTL.")
-		fCacheSize         = flag.Int("cachesize", 1000, "Cache capacity (number of items).")
 	)
 	flag.Parse()
 	flagenv.Parse()
@@ -70,31 +66,9 @@ func main() {
 	// Parse sitemap template
 	loadSitemap()
 
-	// Initialize HTTP ache
-	memcache, err := memory.NewAdapter(
-		memory.AdapterWithAlgorithm(memory.LRU),
-		memory.AdapterWithCapacity(*fCacheSize),
-	)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	/*cacheClient*/ _, err = cache.NewClient(
-		cache.ClientWithAdapter(memcache),
-		cache.ClientWithTTL(*fCacheTTL),
-		// cache.ClientWithRefreshKey("opn"),
-	)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	log.Print("Initialized cache")
-
 	// Setup handlers
 	http.Handle("/template/", http.HandlerFunc(notFound))
-	// http.Handle("/sitemap.txt", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(sitemap))))
 	http.Handle("/sitemap.txt", gziphandler.GzipHandler(http.HandlerFunc(sitemap)))
-	// http.Handle("/", cacheClient.Middleware(gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(specialFileHidingFileSystem{http.Dir(".")}))))))
 	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(specialFileHidingFileSystem{http.Dir(".")})))))
 	log.Print("Created handlers")
 
