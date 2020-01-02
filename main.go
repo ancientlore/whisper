@@ -28,9 +28,9 @@ func main() {
 	// Setup flags
 	var (
 		fPort              = flag.Int("port", 8080, "Port to listen on.")
-		fReadTimeout       = flag.Duration("readtimeout", 5*time.Second, "HTTP server read timeout.")
-		fReadHeaderTimeout = flag.Duration("readheadertimeout", 3*time.Second, "HTTP server read header timeout.")
-		fWriteTimeout      = flag.Duration("writetimeout", 10*time.Second, "HTTP server write timeout.")
+		fReadTimeout       = flag.Duration("readtimeout", 10*time.Second, "HTTP server read timeout.")
+		fReadHeaderTimeout = flag.Duration("readheadertimeout", 5*time.Second, "HTTP server read header timeout.")
+		fWriteTimeout      = flag.Duration("writetimeout", 30*time.Second, "HTTP server write timeout.")
 		fRoot              = flag.String("root", ".", "Root of web site.")
 		fCacheTTL          = flag.Duration("cachettl", 10*time.Minute, "Cache TTL.")
 		fCacheSize         = flag.Int("cachesize", 1000, "Cache capacity (number of items).")
