@@ -79,7 +79,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	cacheClient, err := cache.NewClient(
+	/*cacheClient*/ _, err = cache.NewClient(
 		cache.ClientWithAdapter(memcache),
 		cache.ClientWithTTL(*fCacheTTL),
 		// cache.ClientWithRefreshKey("opn"),
@@ -92,8 +92,10 @@ func main() {
 
 	// Setup handlers
 	http.Handle("/template/", http.HandlerFunc(notFound))
-	http.Handle("/sitemap.txt", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(sitemap))))
-	http.Handle("/", cacheClient.Middleware(gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(specialFileHidingFileSystem{http.Dir(".")}))))))
+	// http.Handle("/sitemap.txt", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(sitemap))))
+	http.Handle("/sitemap.txt", gziphandler.GzipHandler(http.HandlerFunc(sitemap)))
+	// http.Handle("/", cacheClient.Middleware(gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(specialFileHidingFileSystem{http.Dir(".")}))))))
+	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(specialFileHidingFileSystem{http.Dir(".")})))))
 	log.Print("Created handlers")
 
 	// Create signal handler for graceful shutdown
