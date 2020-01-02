@@ -8,10 +8,11 @@ import (
 
 // frontMatter holds data scraped from a Markdown page.
 type frontMatter struct {
-	Title    string    `toml:"title" comment:"Title of this page"`
-	Date     time.Time `toml:"date" comment:"Date the article appears"`
-	Template string    `toml:"template" comment:"The name of the template to use"`
-	Tags     []string  `toml:"tags" comment:"Tags to assign to this article"`
+	Title    string        `toml:"title" comment:"Title of this page"`
+	Date     time.Time     `toml:"date" comment:"Date the article appears"`
+	Template string        `toml:"template" comment:"The name of the template to use"`
+	Tags     []string      `toml:"tags" comment:"Tags to assign to this article"`
+	Expires  time.Duration `toml:"expires" comment:"Use for pages that need an Expires header"`
 }
 
 // fmRegexp is the regular expression used to split out front matter.

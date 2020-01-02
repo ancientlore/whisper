@@ -1,5 +1,6 @@
 +++
 title = "Dude!"
+expires = "1m"
 +++
 # Welcome
 Welcome to the sample site!

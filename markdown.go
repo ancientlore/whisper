@@ -5,6 +5,7 @@ import (
 	"errors"
 	"html/template"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -26,6 +27,17 @@ type data struct {
 	FrontMatter frontMatter
 	Page        pageInfo
 	Content     template.HTML
+}
+
+var gmtZone *time.Location
+
+func init() {
+	var err error
+	gmtZone, err = time.LoadLocation("GMT")
+	if err != nil {
+		log.Printf("Cannot load GMT, using UTC instead: %s", err)
+		gmtZone = time.UTC
+	}
 }
 
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
@@ -104,6 +116,9 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		}
 		// Set headers
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if data.FrontMatter.Expires != 0 {
+			w.Header().Set("Expires", time.Now().Add(data.FrontMatter.Expires).In(gmtZone).Format(time.RFC1123))
+		}
 		// w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
 		http.ServeContent(w, r, "", s.ModTime(), bytes.NewReader(out.Bytes()))
 	})

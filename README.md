@@ -33,6 +33,7 @@ title    | string           | Title of page
 date     | time             | Publish date
 tags     | array of strings | Tags for the articles (not used yet)
 template | string           | Override the template to render this file
+expires  | duration         | Set expiry for a specific page
 
 Front matter is used for sorting and constructing lists of articles.
 
@@ -46,6 +47,7 @@ _whisper_ uses standard Go templates from the `html/template` package. Templates
         Date     time.Time `toml:"date" comment:"Date the article appears"`
         Template string    `toml:"template" comment:"The name of the template to use"`
         Tags     []string  `toml:"tags" comment:"Tags to assign to this article"`
+	    Expires time.Duration `toml:"expires" comment:"Use for pages that need an Expires header"`
     }
 
     // pageInfo has information about the current page.
