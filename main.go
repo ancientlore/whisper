@@ -52,6 +52,7 @@ func main() {
 		log.Printf("Cannot switch to root %q: %s", *fRoot, err)
 		os.Exit(1)
 	}
+	log.Printf("Changed to %q directory", *fRoot)
 
 	// Parse templates
 	funcMap := template.FuncMap{
@@ -64,6 +65,10 @@ func main() {
 		log.Printf("Cannot parse templates: %s", err)
 		os.Exit(2)
 	}
+	log.Printf("Loaded templates: %s", tpl.DefinedTemplates())
+
+	// Parse sitemap template
+	loadSitemap()
 
 	// Initialize HTTP ache
 	memcache, err := memory.NewAdapter(
@@ -83,10 +88,13 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	log.Print("Initialized cache")
 
 	// Setup handlers
 	http.Handle("/template/", http.HandlerFunc(notFound))
+	http.Handle("/sitemap.txt", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(sitemap))))
 	http.Handle("/", cacheClient.Middleware(gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(specialFileHidingFileSystem{http.Dir(".")}))))))
+	log.Print("Created handlers")
 
 	// Create signal handler for graceful shutdown
 	go func() {
@@ -109,6 +117,7 @@ func main() {
 	}()
 
 	// Listen for requests
+	log.Print("Listening for requests")
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("HTTP server: %v", err)
 	} else {

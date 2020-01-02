@@ -9,7 +9,7 @@ In general, _whisper_ serves static content from the location it's found - makin
 See the [example](example) folder for a sample site layout. In general, I want to use conventions instead of configuration files. Conventions used by this server include:
 
 * The `template` folder holds HTML templates, using Go's `html/template` package. These templates are used for rendering content but never served directly.
-* A sitemap is automatically created and rendered as `/sitemap.txt`.
+* A `sitemap.txt` can be created as a template. See the [example](example) for details.
 * The default page for a folder is a Markdown file called `index.md`.
 
 ## Markdown
@@ -85,4 +85,4 @@ Because _whisper_ caches files that are generated, the process of building a pag
 
 * It's not a goal to make templates reusable. I expect templates need editing for new sites.
 * It's not a goal to automate creation of the menu.
-
+* It's not a goal to be a fully-featured server. I run [Caddy](https://caddyserver.com/) in front of it.

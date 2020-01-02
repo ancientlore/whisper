@@ -1,0 +1,2 @@
+{{define "sitemap"}}{{range .}}http://dude.ancientlore.io/{{.}}
+{{end}}{{end}}
