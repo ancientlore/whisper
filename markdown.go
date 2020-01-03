@@ -66,7 +66,8 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			defaultHandler.ServeHTTP(w, r)
 			return
 		} else if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("markdown: %s", err)
+			serverError(w, r)
 			return
 		}
 		// Read the markdown content
@@ -75,7 +76,8 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			notFound(w, r)
 			return
 		} else if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("markdown: %s", err)
+			serverError(w, r)
 			return
 		}
 		// extract front matter
@@ -94,7 +96,8 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		if len(fm) > 0 {
 			err = toml.Unmarshal(fm, &data.FrontMatter)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				log.Printf("markdown: %s", err)
+				serverError(w, r)
 				return
 			}
 		}
@@ -111,7 +114,8 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		var out bytes.Buffer
 		err = tpl.ExecuteTemplate(&out, templateName, data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("markdown: %s", err)
+			serverError(w, r)
 			return
 		}
 		// Set headers

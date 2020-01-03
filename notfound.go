@@ -39,7 +39,8 @@ func existsHandler(defaultHandler http.Handler) http.Handler {
 			notFound(w, r)
 			return
 		} else if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("existsHandler: %s", err)
+			serverError(w, r)
 			return
 		}
 		defaultHandler.ServeHTTP(w, r)
