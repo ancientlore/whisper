@@ -1,6 +1,7 @@
 +++
 title = "Dude!"
 expires = "1m"
+template = "home"
 +++
 # Welcome
 Welcome to the sample site!

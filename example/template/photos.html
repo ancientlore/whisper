@@ -1,0 +1,21 @@
+{{define "photos"}}
+{{template "header" .}}
+<div class="content">
+    {{.Content}}
+    <amp-carousel id="carousel-with-lightbox"
+        width="620"
+        height="400"
+        layout="responsive"
+        type="slides"
+        lightbox>
+        {{ $p := .Page.Path}}{{range dir .Page.Path}}
+        <amp-img src="{{join $p .Filename}}"
+            width="620"
+            height="400"
+            layout="responsive"
+            alt="{{.FrontMatter.Title}}"></amp-img>
+        {{end}}
+    </amp-carousel>
+</div>
+{{template "footer" .}}
+{{end}}
