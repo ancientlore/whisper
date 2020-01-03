@@ -56,7 +56,7 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		}
 		// Prepare markdown physical file name
 		d = strings.TrimPrefix(d, "/")
-		if !strings.HasSuffix(fn, ".md") {
+		if ext != ".md" {
 			fn += ".md"
 		}
 		fn = path.Join(d, fn)
