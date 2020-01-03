@@ -5,21 +5,16 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"syscall"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/facebookgo/flagenv"
 )
-
-// tpl stores the site's HTML templates.
-var tpl *template.Template
 
 // main is where it all begins.
 func main() {
@@ -51,13 +46,7 @@ func main() {
 	log.Printf("Changed to %q directory", *fRoot)
 
 	// Parse templates
-	funcMap := template.FuncMap{
-		// The name "title" is what the function will be called in the template text.
-		"dir":  dir,
-		"join": path.Join,
-		"ext":  path.Ext,
-	}
-	tpl, err = template.New("whisper").Funcs(funcMap).ParseGlob("template/*.html")
+	err = loadTemplates()
 	if err != nil {
 		log.Printf("Cannot parse templates: %s", err)
 		os.Exit(2)
@@ -65,7 +54,16 @@ func main() {
 	log.Printf("Loaded templates: %s", tpl.DefinedTemplates())
 
 	// Parse sitemap template
-	loadSitemap()
+	ok, err := loadSitemapTemplate()
+	if err != nil {
+		log.Printf("Unable to load sitemap.txt template: %s", err)
+		os.Exit(3)
+	}
+	if !ok {
+		log.Print("No sitemap.txt template found.")
+	} else {
+		log.Print("Loaded sitemap.txt template.")
+	}
 
 	// Setup handlers
 	http.Handle("/template/", http.HandlerFunc(notFound))

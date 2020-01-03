@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"log"
 	"net/http"
@@ -8,22 +9,23 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 )
 
 var sitemapTpl *template.Template
 
-func loadSitemap() {
+// loadSitemapTemplate loads the /sitemap.txt template,
+// returning true if it exists.
+func loadSitemapTemplate() (bool, error) {
 	var err error
 	sitemapTpl, err = template.New("sitemap").ParseFiles("./sitemap.txt")
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			log.Printf("Unable to load sitemap.txt template: %s", err)
-			os.Exit(3)
+			return false, err
 		}
-		log.Print("No sitemap.txt template found.")
-		return
+		return false, nil
 	}
-	log.Print("Loaded sitemap.txt template.")
+	return true, nil
 }
 
 // sitemap is an http.HandlerFunc that renders the site map.
@@ -32,24 +34,29 @@ func sitemap(w http.ResponseWriter, r *http.Request) {
 		notFound(w, r)
 		return
 	}
-	files, err := loadSitemapFiles()
+	files, modTime, err := loadSitemapFiles()
 	if err != nil {
 		log.Printf("sitemap: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "text/plain")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	err = sitemapTpl.ExecuteTemplate(w, "sitemap", files)
+	var out bytes.Buffer
+	err = sitemapTpl.ExecuteTemplate(&out, "sitemap", files)
 	if err != nil {
 		log.Printf("sitemap: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	http.ServeContent(w, r, "sitemap.txt", modTime, bytes.NewReader(out.Bytes()))
 }
 
 // loadSitemap reads the sitemap files.
-func loadSitemapFiles() ([]string, error) {
-	var result []string
+func loadSitemapFiles() ([]string, time.Time, error) {
+	var (
+		result  []string
+		maxTime time.Time
+	)
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("loadSitemap: %s", err)
@@ -73,8 +80,11 @@ func loadSitemapFiles() ([]string, error) {
 		if strings.HasSuffix(path, ".md") {
 			path = strings.TrimSuffix(path, ".md")
 		}
+		if info.ModTime().After(maxTime) {
+			maxTime = info.ModTime()
+		}
 		result = append(result, filepath.ToSlash(path))
 		return nil
 	})
-	return result, err
+	return result, maxTime, err
 }
