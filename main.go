@@ -55,6 +55,7 @@ func main() {
 		// The name "title" is what the function will be called in the template text.
 		"dir":  dir,
 		"join": path.Join,
+		"ext":  path.Ext,
 	}
 	tpl, err = template.New("whisper").Funcs(funcMap).ParseGlob("template/*.html")
 	if err != nil {

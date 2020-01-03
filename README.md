@@ -71,6 +71,7 @@ Function                       | Description
 -------------------------------|------------
 `dir(path string) []file`      | Return the contents of the given folder, excluding special files and subfolders.
 `join(parts ...string) string` | The same as path.Join
+`ext(path string) string`      | The same as path.Ext
 
 `file` is defined as:
 
