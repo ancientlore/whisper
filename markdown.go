@@ -31,13 +31,14 @@ type data struct {
 
 var gmtZone *time.Location
 
-func init() {
+// initGMT initialized the GMT zone used in headers.
+func initGMT() error {
 	var err error
 	gmtZone, err = time.LoadLocation("GMT")
 	if err != nil {
-		log.Printf("Cannot load GMT, using UTC instead: %s", err)
 		gmtZone = time.UTC
 	}
+	return err
 }
 
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.

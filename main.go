@@ -29,6 +29,14 @@ func main() {
 	flag.Parse()
 	flagenv.Parse()
 
+	// init GMT time zone
+	err := initGMT()
+	if err != nil {
+		log.Printf("Cannot load GMT, using UTC instead: %s", err)
+	} else {
+		log.Print("Loaded GMT zone")
+	}
+
 	// Create HTTP server
 	var srv = http.Server{
 		Addr:              fmt.Sprintf(":%d", *fPort),
@@ -38,7 +46,7 @@ func main() {
 	}
 
 	// Switch to site folder
-	err := os.Chdir(*fRoot)
+	err = os.Chdir(*fRoot)
 	if err != nil {
 		log.Printf("Cannot switch to root %q: %s", *fRoot, err)
 		os.Exit(1)
