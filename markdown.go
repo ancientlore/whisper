@@ -43,6 +43,7 @@ func init() {
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
 func markdown(defaultHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// log.Print(r.URL.Path)
 		// split path and file
 		d, fn := path.Split(r.URL.Path)
 		if fn == "" {
@@ -67,7 +68,7 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			return
 		} else if err != nil {
 			log.Printf("markdown: %s", err)
-			serverError(w, r)
+			serverError(w, r, err.Error())
 			return
 		}
 		// Read the markdown content
@@ -77,7 +78,7 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			return
 		} else if err != nil {
 			log.Printf("markdown: %s", err)
-			serverError(w, r)
+			serverError(w, r, err.Error())
 			return
 		}
 		// extract front matter
@@ -97,7 +98,7 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			err = toml.Unmarshal(fm, &data.FrontMatter)
 			if err != nil {
 				log.Printf("markdown: %s", err)
-				serverError(w, r)
+				serverError(w, r, err.Error())
 				return
 			}
 		}
@@ -115,7 +116,7 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		err = tpl.ExecuteTemplate(&out, templateName, data)
 		if err != nil {
 			log.Printf("markdown: %s", err)
-			serverError(w, r)
+			serverError(w, r, err.Error())
 			return
 		}
 		// Set headers

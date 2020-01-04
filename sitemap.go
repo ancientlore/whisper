@@ -37,14 +37,14 @@ func sitemap(w http.ResponseWriter, r *http.Request) {
 	files, modTime, err := loadSitemapFiles()
 	if err != nil {
 		log.Printf("sitemap: %s", err)
-		serverError(w, r)
+		serverError(w, r, err.Error())
 		return
 	}
 	var out bytes.Buffer
 	err = sitemapTpl.ExecuteTemplate(&out, "sitemap", files)
 	if err != nil {
 		log.Printf("sitemap: %s", err)
-		serverError(w, r)
+		serverError(w, r, err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")

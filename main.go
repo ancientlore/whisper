@@ -16,7 +16,7 @@ import (
 	"github.com/facebookgo/flagenv"
 )
 
-// main is where it all begins.
+// main is where it all begins. 😀
 func main() {
 	// Setup flags
 	var (

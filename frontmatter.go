@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/pelletier/go-toml"
 )
 
 // frontMatter holds data scraped from a Markdown page.
@@ -28,4 +32,18 @@ func extractFrontMatter(x []byte) (fm, r []byte) {
 		return nil, x
 	}
 	return []byte(strings.TrimSpace(subs[1])), []byte(strings.TrimSpace(subs[2]))
+}
+
+// readFrontMatter extracts and unmarshals front matter from the given file.
+func readFrontMatter(name string, fm *frontMatter) error {
+	b, err := ioutil.ReadFile(name)
+	if err != nil {
+		return fmt.Errorf("readFrontMatter: %w", err)
+	}
+	fmb, _ := extractFrontMatter(b)
+	err = toml.Unmarshal(fmb, fm)
+	if err != nil {
+		return fmt.Errorf("readFrontMatter: %w", err)
+	}
+	return nil
 }

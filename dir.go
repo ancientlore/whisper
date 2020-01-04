@@ -1,22 +1,22 @@
 package main
 
 import (
-	"io/ioutil"
+	"fmt"
 	"log"
 	"os"
 	"path"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/pelletier/go-toml"
 )
 
+// file holds data about a page endpoint.
 type file struct {
 	FrontMatter frontMatter
 	Filename    string
 }
 
+// files is a sorted list of files.
 type files []file
 
 // Len is part of sort.Interface.
@@ -34,18 +34,28 @@ func (f files) Less(i, j int) bool {
 	return !f[i].FrontMatter.Date.Before(f[j].FrontMatter.Date)
 }
 
+// dir returns a sorted slice of files and is used in templates.
 func dir(folderpath string) []file {
-	folderpath = "./" + strings.TrimPrefix(folderpath, "/")
-	f, err := os.Open(folderpath)
+	f, _, err := readDir(folderpath)
 	if err != nil {
 		log.Printf("dir: %s", err)
 		return nil
 	}
+	return f
+}
+
+// readDir returns a sorted slice of files and the max modification time of those files.
+func readDir(folderpath string) ([]file, time.Time, error) {
+	var maxTime time.Time
+	folderpath = "./" + strings.TrimPrefix(folderpath, "/")
+	f, err := os.Open(folderpath)
+	if err != nil {
+		return nil, maxTime, fmt.Errorf("readDir: %w", err)
+	}
 	defer f.Close()
 	arr, err := f.Readdir(0)
 	if err != nil {
-		log.Printf("dir: %s", err)
-		return nil
+		return nil, maxTime, fmt.Errorf("readDir: %w", err)
 	}
 	var r []file
 	for _, fi := range arr {
@@ -59,29 +69,20 @@ func dir(folderpath string) []file {
 			}
 			if strings.HasSuffix(itm.Filename, ".md") {
 				itm.Filename = strings.TrimSuffix(itm.Filename, ".md")
+				itm.FrontMatter.Title = strings.TrimSuffix(itm.FrontMatter.Title, ".md")
 				err = readFrontMatter(path.Join(folderpath, fi.Name()), &itm.FrontMatter)
 				if err != nil {
-					log.Printf("readFrontMatter: %s", err)
+					log.Printf("readDir: %s", err)
 				}
 			}
 			if itm.FrontMatter.Date.Before(time.Now()) {
+				if fi.ModTime().After(maxTime) {
+					maxTime = fi.ModTime()
+				}
 				r = append(r, itm)
 			}
 		}
 	}
 	sort.Sort(files(r))
-	return r
-}
-
-func readFrontMatter(name string, fm *frontMatter) error {
-	b, err := ioutil.ReadFile(name)
-	if err != nil {
-		return err
-	}
-	fmb, _ := extractFrontMatter(b)
-	err = toml.Unmarshal(fmb, fm)
-	if err != nil {
-		return err
-	}
-	return nil
+	return r, maxTime, nil
 }

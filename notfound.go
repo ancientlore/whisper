@@ -18,7 +18,10 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 	var out bytes.Buffer
 	err := tpl.ExecuteTemplate(&out, "notfound", d)
 	if err != nil {
-		log.Printf("notFound: %s", err)
+		// This is hacky but template package doesn't make it nice to see the error type
+		if !strings.HasSuffix(err.Error(), "is undefined") {
+			log.Printf("notFound: %s", err)
+		}
 		http.NotFound(w, r)
 		return
 	}
@@ -40,7 +43,7 @@ func existsHandler(defaultHandler http.Handler) http.Handler {
 			return
 		} else if err != nil {
 			log.Printf("existsHandler: %s", err)
-			serverError(w, r)
+			serverError(w, r, err.Error())
 			return
 		}
 		defaultHandler.ServeHTTP(w, r)

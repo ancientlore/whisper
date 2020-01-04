@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"path"
 )
@@ -8,6 +9,7 @@ import (
 // tpl stores the site's HTML templates.
 var tpl *template.Template
 
+// loadTemplates loads and parses the HTML templates.
 func loadTemplates() error {
 	var err error
 	funcMap := template.FuncMap{
@@ -16,5 +18,8 @@ func loadTemplates() error {
 		"ext":  path.Ext,
 	}
 	tpl, err = template.New("whisper").Funcs(funcMap).ParseGlob("template/*.html")
-	return err
+	if err != nil {
+		return fmt.Errorf("loadTemplates: %w", err)
+	}
+	return nil
 }
