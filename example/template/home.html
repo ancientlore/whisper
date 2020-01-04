@@ -4,7 +4,9 @@
     {{.Content}}
     <h3>Latest Article</h3>
     {{ $p := dir "/articles"}}{{if len $p}}{{with index $p 0}}
-    {{.FrontMatter.Date.Format "Monday, Jan 2 2006"}} <a href="{{join "/articles" .Filename}}">{{.FrontMatter.Title}}</a>
+    <h3><a href="{{join "/articles" .Filename}}">{{.FrontMatter.Title}}</a></h3>
+    <p>{{.FrontMatter.Date.Format "Monday, Jan 2 2006"}}</p><br/>
+    {{join "/articles" .Filename | markdown}}
     {{end}}
     {{end}}
     <h3>Latest Photo</h3>

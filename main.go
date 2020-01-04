@@ -76,7 +76,7 @@ func main() {
 	// Setup handlers
 	http.Handle("/template/", http.HandlerFunc(notFound))
 	http.Handle("/sitemap.txt", gziphandler.GzipHandler(http.HandlerFunc(sitemap)))
-	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(specialFileHidingFileSystem{http.Dir(".")})))))
+	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir("."))))))
 	log.Print("Created handlers")
 
 	// Create signal handler for graceful shutdown

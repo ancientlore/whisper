@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -45,35 +46,20 @@ func initGMT() error {
 func markdown(defaultHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// log.Print(r.URL.Path)
-		// split path and file
-		d, fn := path.Split(r.URL.Path)
-		if fn == "" {
-			fn = "index.md"
+		if containsSpecialFile(r.URL.Path) {
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
 		}
+		// split path and file
+		fn := pathToMarkdown(r.URL.Path)
 		// check if extension is non-empty and not Markdown
 		ext := path.Ext(fn)
 		if ext != "" && ext != ".md" {
 			defaultHandler.ServeHTTP(w, r)
 			return
 		}
-		// Prepare markdown physical file name
-		d = strings.TrimPrefix(d, "/")
-		if ext != ".md" {
-			fn += ".md"
-		}
-		fn = path.Join(d, fn)
-		// See if the markdown file exists
-		s, err := os.Stat(fn)
-		if errors.Is(err, os.ErrNotExist) {
-			defaultHandler.ServeHTTP(w, r)
-			return
-		} else if err != nil {
-			log.Printf("markdown: %s", err)
-			serverError(w, r, err.Error())
-			return
-		}
-		// Read the markdown content
-		x, err := ioutil.ReadFile(fn)
+		// Read the markdown content and front matter
+		front, y, modTime, err := renderMarkdown(fn)
 		if errors.Is(err, os.ErrNotExist) {
 			notFound(w, r)
 			return
@@ -82,26 +68,15 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			serverError(w, r, err.Error())
 			return
 		}
-		// extract front matter
-		fm, rst := extractFrontMatter(x)
-		// format the markdown
-		y := blackfriday.Run(rst)
 		// prepare template data
-		_, bn := path.Split(r.URL.Path)
+		p, bn := path.Split(r.URL.Path)
 		var data = data{
+			FrontMatter: *front,
 			Page: pageInfo{
-				Path:     r.URL.Path,
+				Path:     p,
 				Filename: bn,
 			},
 			Content: template.HTML(y),
-		}
-		if len(fm) > 0 {
-			err = toml.Unmarshal(fm, &data.FrontMatter)
-			if err != nil {
-				log.Printf("markdown: %s", err)
-				serverError(w, r, err.Error())
-				return
-			}
 		}
 		// Check date - don't render until date/time is passed
 		if time.Now().Before(data.FrontMatter.Date) {
@@ -126,6 +101,68 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			w.Header().Set("Expires", time.Now().Add(data.FrontMatter.Expires).In(gmtZone).Format(time.RFC1123))
 		}
 		// w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
-		http.ServeContent(w, r, "", s.ModTime(), bytes.NewReader(out.Bytes()))
+		http.ServeContent(w, r, "", modTime, bytes.NewReader(out.Bytes()))
 	})
+}
+
+// pathToMarkdown takes a URL path and converts it into the path to the associated Markdown file.
+func pathToMarkdown(filename string) string {
+	// check for folder - if so, add index.md
+	if strings.HasSuffix(filename, "/") {
+		filename += "index.md"
+	}
+	// removing leading / so we find it on the file system
+	filename = strings.TrimPrefix(filename, "/")
+	// make sure the extension is present
+	if path.Ext(filename) == "" {
+		filename += ".md"
+	}
+	return filename
+}
+
+// renderMarkdown renders the markdown for the given file and returns the frontmatter.
+func renderMarkdown(filename string) (*frontMatter, template.HTML, time.Time, error) {
+	var (
+		fmData  frontMatter
+		md      template.HTML
+		modTime time.Time
+	)
+	filename = pathToMarkdown(filename)
+	s, err := os.Stat(filename)
+	if err != nil {
+		return nil, "", modTime, fmt.Errorf("renderMarkdown: %w", err)
+	}
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, "", modTime, fmt.Errorf("renderMarkdown: %w", err)
+	}
+	fm, r := extractFrontMatter(b)
+	md = template.HTML(blackfriday.Run(r))
+	if len(fm) > 0 {
+		err = toml.Unmarshal(fm, &fmData)
+		if err != nil {
+			return nil, "", modTime, fmt.Errorf("renderMarkdown: %w", err)
+		}
+	}
+	return &fmData, md, s.ModTime(), nil
+}
+
+// md convert the given markdown file to HTML and is used in templates.
+func md(filename string) template.HTML {
+	_, md, _, err := renderMarkdown(filename)
+	if err != nil {
+		log.Printf("md: %s", err)
+		return ""
+	}
+	return md
+}
+
+// fm returns front matter for the given file and is used in templates.
+func fm(filename string) *frontMatter {
+	fm, _, _, err := renderMarkdown(filename)
+	if err != nil {
+		log.Printf("fm: %s", err)
+		return nil
+	}
+	return fm
 }
