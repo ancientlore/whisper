@@ -53,7 +53,7 @@ func (f filesByName) Less(i, j int) bool {
 
 // dir returns a sorted slice of files and is used in templates.
 func dir(folderpath string) []file {
-	f, _, err := readDir(folderpath)
+	f, _, err := cachedReadDir(folderpath)
 	if err != nil {
 		log.Printf("dir: %s", err)
 		return nil

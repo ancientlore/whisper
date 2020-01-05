@@ -45,7 +45,7 @@ func extHandler(defaultHandler http.Handler, extensions []string, templateName s
 		)
 		if ext == ".md" || ext == "" {
 			// Read the markdown content and front matter
-			front, y, modTime, err = renderMarkdown(fn)
+			front, y, modTime, err = cachedRenderMarkdown(fn)
 			if err == nil {
 				foundMD = true
 			} else if !errors.Is(err, os.ErrNotExist) {

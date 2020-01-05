@@ -25,6 +25,7 @@ func main() {
 		fReadHeaderTimeout = flag.Duration("readheadertimeout", 5*time.Second, "HTTP server read header timeout.")
 		fWriteTimeout      = flag.Duration("writetimeout", 30*time.Second, "HTTP server write timeout.")
 		fRoot              = flag.String("root", ".", "Root of web site.")
+		fCacheDuration     = flag.Duration("cacheduration", time.Minute, "How long to cache content.")
 	)
 	flag.Parse()
 	flagenv.Parse()
@@ -34,7 +35,7 @@ func main() {
 	if err != nil {
 		log.Printf("Cannot load GMT, using UTC instead: %s", err)
 	} else {
-		log.Print("Loaded GMT zone")
+		log.Print("Loaded GMT zone.")
 	}
 
 	// Create HTTP server
@@ -51,7 +52,7 @@ func main() {
 		log.Printf("Cannot switch to root %q: %s", *fRoot, err)
 		os.Exit(1)
 	}
-	log.Printf("Changed to %q directory", *fRoot)
+	log.Printf("Changed to %q directory.", *fRoot)
 
 	// Parse templates
 	err = loadTemplates()
@@ -73,6 +74,12 @@ func main() {
 		log.Print("Loaded sitemap.txt template.")
 	}
 
+	// initialize cache
+	initGroupCache()
+	initReadDirCache(2*1024*1024, *fCacheDuration)
+	initMarkdownCache(2*1024*1024, *fCacheDuration)
+	log.Print("Initialized cache.")
+
 	// Setup handlers
 	http.Handle("/template/", gziphandler.GzipHandler(http.HandlerFunc(notFound)))
 	http.Handle("/sitemap.txt", gziphandler.GzipHandler(http.HandlerFunc(sitemap)))
@@ -83,7 +90,7 @@ func main() {
 		http.Handle("/"+folder+"/", imageHandler)
 	}
 	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir("."))))))
-	log.Print("Created handlers")
+	log.Print("Created handlers.")
 
 	// Create signal handler for graceful shutdown
 	go func() {
@@ -106,7 +113,7 @@ func main() {
 	}()
 
 	// Listen for requests
-	log.Print("Listening for requests")
+	log.Print("Listening for requests.")
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("HTTP server: %v", err)
 	} else {

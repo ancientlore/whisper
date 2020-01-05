@@ -63,7 +63,7 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			return
 		}
 		// Read the markdown content and front matter
-		front, y, modTime, err := renderMarkdown(fn)
+		front, y, modTime, err := cachedRenderMarkdown(fn)
 		if errors.Is(err, os.ErrNotExist) {
 			notFound(w, r)
 			return
@@ -153,7 +153,7 @@ func renderMarkdown(filename string) (*frontMatter, template.HTML, time.Time, er
 
 // md convert the given markdown file to HTML and is used in templates.
 func md(filename string) template.HTML {
-	_, md, _, err := renderMarkdown(filename)
+	_, md, _, err := cachedRenderMarkdown(filename)
 	if err != nil {
 		log.Printf("md: %s", err)
 		return ""
@@ -163,7 +163,7 @@ func md(filename string) template.HTML {
 
 // fm returns front matter for the given file and is used in templates.
 func fm(filename string) *frontMatter {
-	fm, _, _, err := renderMarkdown(filename)
+	fm, _, _, err := cachedRenderMarkdown(filename)
 	if err != nil {
 		log.Printf("fm: %s", err)
 		return nil
