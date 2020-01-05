@@ -102,6 +102,7 @@ func match(s string, pat ...string) bool {
 func readDir(folderpath string) ([]file, time.Time, error) {
 	var maxTime time.Time
 	folderpath = "./" + strings.TrimPrefix(folderpath, "/")
+	folderpath = path.Clean(folderpath)
 	f, err := os.Open(folderpath)
 	if err != nil {
 		return nil, maxTime, fmt.Errorf("readDir: %w", err)

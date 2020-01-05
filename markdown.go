@@ -115,6 +115,7 @@ func pathToMarkdown(filename string) string {
 	if strings.HasSuffix(filename, "/") {
 		filename += "index.md"
 	}
+	filename = path.Clean(filename)
 	// removing leading / so we find it on the file system
 	filename = strings.TrimPrefix(filename, "/")
 	// make sure the extension is present
