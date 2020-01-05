@@ -65,7 +65,7 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		// Read the markdown content and front matter
 		front, y, modTime, err := cachedRenderMarkdown(fn)
 		if errors.Is(err, os.ErrNotExist) {
-			notFound(w, r)
+			defaultHandler.ServeHTTP(w, r)
 			return
 		} else if err != nil {
 			log.Printf("markdown: %s", err)
