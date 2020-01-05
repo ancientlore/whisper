@@ -13,6 +13,10 @@
             layout="responsive"
             alt="{{.FrontMatter.Title}}"></amp-img>
     </amp-carousel>
+    <p>{{$files := filter (sortbyname (dir .Page.Path)) "*.png" "*.jpg" "*.gif"}}
+        {{if $f := prev $files .Page.Filename}}<a href="{{trimsuffix (join .Page.Path $f.Filename) (ext $f.Filename)}}">&lt; Previous</a>{{end}}
+        {{if $f := next $files .Page.Filename}}<a href="{{trimsuffix (join .Page.Path $f.Filename) (ext $f.Filename)}}">Next &gt;</a>{{end}}
+    </p>
 </div>
 {{template "footer" .}}
 {{end}}

@@ -98,6 +98,32 @@ func match(s string, pat ...string) bool {
 	return false
 }
 
+// next returns the previous file in the list.
+func next(f []file, current string) *file {
+	for i := range f {
+		if f[i].Filename == current {
+			if i > 0 {
+				return &f[i-1]
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+// prev returns the previous file in the list.
+func prev(f []file, current string) *file {
+	for i := range f {
+		if f[i].Filename == current {
+			if i < len(f)-1 {
+				return &f[i+1]
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
 // readDir returns a sorted slice of files and the max modification time of those files.
 func readDir(folderpath string) ([]file, time.Time, error) {
 	var maxTime time.Time

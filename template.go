@@ -21,6 +21,8 @@ func loadTemplates() error {
 		"filter":      filter,
 		"join":        path.Join,
 		"ext":         path.Ext,
+		"prev":        prev,
+		"next":        next,
 		"trimsuffix":  strings.TrimSuffix,
 		"trimprefix":  strings.TrimPrefix,
 		"trimspace":   strings.TrimSpace,
