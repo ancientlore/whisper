@@ -146,7 +146,7 @@ func renderMarkdown(filename string) (*frontMatter, template.HTML, time.Time, er
 		return nil, "", modTime, fmt.Errorf("renderMarkdown: %w", err)
 	}
 	fm, r := extractFrontMatter(b)
-	md = template.HTML(blackfriday.Run(r))
+	md = template.HTML(blackfriday.Run(r, blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.Footnotes)))
 	if len(fm) > 0 {
 		err = toml.Unmarshal(fm, &fmData)
 		if err != nil {
