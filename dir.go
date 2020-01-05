@@ -73,6 +73,15 @@ func sortByName(f []file) []file {
 	return f
 }
 
+func reverse(f []file) []file {
+	j := len(f) - 1
+	for i := 0; i < len(f)/2; i++ {
+		f[i], f[j] = f[j], f[i]
+		j--
+	}
+	return f
+}
+
 // filter trims out non-matching files based on name.
 func filter(f []file, pat ...string) []file {
 	var r []file

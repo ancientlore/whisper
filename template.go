@@ -23,6 +23,7 @@ func loadTemplates() error {
 		"ext":         path.Ext,
 		"prev":        prev,
 		"next":        next,
+		"reverse":     reverse,
 		"trimsuffix":  strings.TrimSuffix,
 		"trimprefix":  strings.TrimPrefix,
 		"trimspace":   strings.TrimSpace,
