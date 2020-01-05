@@ -43,7 +43,7 @@ func initGMT() error {
 }
 
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
-func markdown(defaultHandler http.Handler) http.Handler {
+func markdown(defaultHandler http.Handler, defaultExpiry time.Duration) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -101,8 +101,12 @@ func markdown(defaultHandler http.Handler) http.Handler {
 		}
 		// Set headers
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		expiry := defaultExpiry
 		if data.FrontMatter.Expires != 0 {
-			w.Header().Set("Expires", time.Now().Add(data.FrontMatter.Expires).In(gmtZone).Format(time.RFC1123))
+			expiry = data.FrontMatter.Expires
+		}
+		if expiry != 0 {
+			w.Header().Set("Expires", time.Now().Add(expiry).In(gmtZone).Format(time.RFC1123))
 		}
 		// w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
 		http.ServeContent(w, r, "", modTime, bytes.NewReader(out.Bytes()))

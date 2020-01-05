@@ -26,6 +26,7 @@ func main() {
 		fWriteTimeout      = flag.Duration("writetimeout", 30*time.Second, "HTTP server write timeout.")
 		fRoot              = flag.String("root", ".", "Root of web site.")
 		fCacheDuration     = flag.Duration("cacheduration", time.Minute, "How long to cache content.")
+		fExpires           = flag.Duration("expires", 0, "Default expires header.")
 	)
 	flag.Parse()
 	flagenv.Parse()
@@ -84,12 +85,12 @@ func main() {
 	http.Handle("/template/", gziphandler.GzipHandler(http.HandlerFunc(notFound)))
 	http.Handle("/sitemap.txt", gziphandler.GzipHandler(http.HandlerFunc(sitemap)))
 	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
-	imageHandler := gziphandler.GzipHandler(extHandler(existsHandler(http.FileServer(http.Dir("."))), imageTypes, "image"))
+	imageHandler := gziphandler.GzipHandler(extHandler(existsHandler(http.FileServer(http.Dir("."))), *fExpires, imageTypes, "image"))
 	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
 	for _, folder := range imageFolders {
 		http.Handle("/"+folder+"/", imageHandler)
 	}
-	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir("."))))))
+	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir("."))), *fExpires)))
 	log.Print("Created handlers.")
 
 	// Create signal handler for graceful shutdown
