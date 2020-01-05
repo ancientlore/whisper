@@ -45,6 +45,10 @@ func initGMT() error {
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
 func markdown(defaultHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
 		// log.Print(r.URL.Path)
 		if containsSpecialFile(r.URL.Path) {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
