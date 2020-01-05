@@ -75,7 +75,7 @@ func extHandler(defaultHandler http.Handler, defaultExpiry time.Duration, extens
 			break
 		}
 		if !foundMD && foundExt == "" {
-			notFound(w, r)
+			defaultHandler.ServeHTTP(w, r)
 			return
 		}
 		// prepare template data
