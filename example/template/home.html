@@ -2,6 +2,7 @@
 {{template "header" .}}
 <div class="content">
     {{.Content}}
+    <hr/>
     <h3>Latest Article</h3>
     {{ $p := dir "/articles"}}{{if len $p}}{{with index $p 0}}
     <h3><a href="{{join "/articles" .Filename}}">{{.FrontMatter.Title}}</a></h3>
@@ -9,6 +10,7 @@
     {{join "/articles" .Filename | markdown}}
     {{end}}
     {{end}}
+    <hr/>
     <h3>Latest Photo</h3>
     {{ $p := dir "/photos"}}{{if len $p}}{{with index $p 0}}
     <amp-carousel id="carousel"
