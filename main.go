@@ -74,8 +74,14 @@ func main() {
 	}
 
 	// Setup handlers
-	http.Handle("/template/", http.HandlerFunc(notFound))
+	http.Handle("/template/", gziphandler.GzipHandler(http.HandlerFunc(notFound)))
 	http.Handle("/sitemap.txt", gziphandler.GzipHandler(http.HandlerFunc(sitemap)))
+	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
+	imageHandler := gziphandler.GzipHandler(extHandler(existsHandler(http.FileServer(http.Dir("."))), imageTypes, "image"))
+	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
+	for _, folder := range imageFolders {
+		http.Handle("/"+folder+"/", imageHandler)
+	}
 	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir("."))))))
 	log.Print("Created handlers")
 

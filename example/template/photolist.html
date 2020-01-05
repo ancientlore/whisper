@@ -1,0 +1,11 @@
+{{define "photolist"}}
+{{template "header" .}}
+<div class="content">
+    {{.Content}}
+    <ul>
+    {{ $p := .Page.Path}}{{range filter (sortbyname (dir .Page.Path)) "*.png" "*.jpg" "*.gif"}}
+    <li><a href="{{trimsuffix (join $p .Filename) (ext .Filename)}}">{{.FrontMatter.Title}}</a></li>
+    {{end}}</ul>
+</div>
+{{template "footer" .}}
+{{end}}

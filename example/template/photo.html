@@ -1,20 +1,17 @@
-{{define "photos"}}
+{{define "image"}}
 {{template "header" .}}
 <div class="content">
     {{.Content}}
-    <amp-carousel id="carousel-with-lightbox"
+    <amp-carousel id="carousel-single"
         width="620"
         height="400"
         layout="responsive"
-        type="slides"
-        lightbox>
-        {{ $p := .Page.Path}}{{range filter (sortbyname (dir .Page.Path)) "*.png" "*.jpg" "*.gif"}}
-        <amp-img src="{{join $p .Filename}}"
+        type="slides">
+        <amp-img src="{{join .Page.Path .Page.Filename}}"
             width="620"
             height="400"
             layout="responsive"
             alt="{{.FrontMatter.Title}}"></amp-img>
-        {{end}}
     </amp-carousel>
 </div>
 {{template "footer" .}}

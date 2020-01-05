@@ -16,22 +16,39 @@ type file struct {
 	Filename    string
 }
 
-// files is a sorted list of files.
-type files []file
+// filesByTime is a sorted list of files.
+type filesByTime []file
 
 // Len is part of sort.Interface.
-func (f files) Len() int {
+func (f filesByTime) Len() int {
 	return len(f)
 }
 
 // Swap is part of sort.Interface.
-func (f files) Swap(i, j int) {
+func (f filesByTime) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
 
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (f files) Less(i, j int) bool {
+func (f filesByTime) Less(i, j int) bool {
 	return !f[i].FrontMatter.Date.Before(f[j].FrontMatter.Date)
+}
+
+type filesByName []file
+
+// Len is part of sort.Interface.
+func (f filesByName) Len() int {
+	return len(f)
+}
+
+// Swap is part of sort.Interface.
+func (f filesByName) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (f filesByName) Less(i, j int) bool {
+	return strings.Compare(f[i].Filename, f[j].Filename) > 0
 }
 
 // dir returns a sorted slice of files and is used in templates.
@@ -42,6 +59,43 @@ func dir(folderpath string) []file {
 		return nil
 	}
 	return f
+}
+
+// sortByName sorts the files by the time in reverse order
+func sortByTime(f []file) []file {
+	sort.Sort(filesByTime(f))
+	return f
+}
+
+// sortByName sorts the files by the time in reverse order
+func sortByName(f []file) []file {
+	sort.Sort(filesByName(f))
+	return f
+}
+
+// filter trims out non-matching files based on name.
+func filter(f []file, pat ...string) []file {
+	var r []file
+	for i := range f {
+		if match(f[i].Filename, pat...) {
+			r = append(r, f[i])
+		}
+	}
+	return r
+}
+
+// match uses path.Match to test for a match.
+func match(s string, pat ...string) bool {
+	for i := range pat {
+		b, err := path.Match(pat[i], s)
+		if err != nil {
+			log.Printf("match: %s", err)
+		}
+		if b {
+			return true
+		}
+	}
+	return false
 }
 
 // readDir returns a sorted slice of files and the max modification time of those files.
@@ -63,7 +117,7 @@ func readDir(folderpath string) ([]file, time.Time, error) {
 			itm := file{
 				Filename: fi.Name(),
 				FrontMatter: frontMatter{
-					Title: fi.Name(),
+					Title: strings.TrimSuffix(fi.Name(), path.Ext(fi.Name())),
 					Date:  fi.ModTime(),
 				},
 			}
@@ -83,6 +137,5 @@ func readDir(folderpath string) ([]file, time.Time, error) {
 			}
 		}
 	}
-	sort.Sort(files(r))
 	return r, maxTime, nil
 }

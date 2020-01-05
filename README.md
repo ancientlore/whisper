@@ -82,7 +82,8 @@ Function                       | Description
 
 If `file` is not a Markdown file, then `FrontMatter.Title` is set to the file name and `FrontMatter.Date` is set to the modification time. The array is sorted by reverse date (most recent items first).
 
-Because _whisper_ caches files that are generated, the process of building a page isn't repeated unnecessarily.
+### Image Templates
+Folders named `photos`, `images`, `pictures`, `cartoons`, `toons`, `sketches`, `artwork`, or `drawings` use a special handler that can serve images using an HTML template called `image`. Though not strictly required, having an `image` template is a good idea.
 
 ## Non-Goals
 

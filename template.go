@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"path"
+	"strings"
 )
 
 // tpl stores the site's HTML templates.
@@ -14,8 +15,15 @@ func loadTemplates() error {
 	var err error
 	funcMap := template.FuncMap{
 		"dir":         dir,
+		"sortbyname":  sortByName,
+		"sortbytime":  sortByTime,
+		"match":       match,
+		"filter":      filter,
 		"join":        path.Join,
 		"ext":         path.Ext,
+		"trimsuffix":  strings.TrimSuffix,
+		"trimprefix":  strings.TrimPrefix,
+		"trimspace":   strings.TrimSpace,
 		"markdown":    md,
 		"frontmatter": fm,
 	}

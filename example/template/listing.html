@@ -3,7 +3,7 @@
 <div class="content">
     {{.Content}}
     <ul>
-    {{ $p := .Page.Path}}{{range dir .Page.Path}}
+    {{ $p := .Page.Path}}{{range sortbytime (dir .Page.Path)}}
     <li><a href="{{join $p .Filename}}">{{.FrontMatter.Title}}</a></li>
     {{end}}</ul>
 </div>

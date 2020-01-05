@@ -46,7 +46,7 @@ func initGMT() error {
 func markdown(defaultHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			http.Error(w, "", http.StatusBadRequest)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 		// log.Print(r.URL.Path)
@@ -54,7 +54,7 @@ func markdown(defaultHandler http.Handler) http.Handler {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
-		// split path and file
+		// clean up path
 		fn := pathToMarkdown(r.URL.Path)
 		// check if extension is non-empty and not Markdown
 		ext := path.Ext(fn)
