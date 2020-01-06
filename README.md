@@ -16,6 +16,8 @@ See the [example](example) folder for a sample site layout. In general, I want t
 
 Web pages are generally written in Markdown and use HTML templates to render into the site. The default template to use is called `default`; you must have a `default` template. Optionally, you can have a `notfound` template to handle 404s and a `error` template to handle 500s. Templates are stored in the `template` folder.
 
+> NOTE: If no `template` folder is found, then default templates are loaded named `default` and `image`. You probably don't want these because they are extremely basic, but it's okay for just messing around and viewing Markdown locally.
+
 Markdown may contain *front matter* which is in TOML format. The front matter is delimited by `+++` at the start and end. For example:
 
     +++

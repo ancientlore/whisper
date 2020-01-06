@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
+	"log"
+	"os"
 	"path"
 	"strings"
 )
@@ -30,9 +33,54 @@ func loadTemplates() error {
 		"markdown":    md,
 		"frontmatter": fm,
 	}
-	tpl, err = template.New("whisper").Funcs(funcMap).ParseGlob("template/*.html")
+	fi, err := os.Stat("template")
+	if errors.Is(err, os.ErrNotExist) || (err == nil && !fi.IsDir()) {
+		log.Print("ERROR: No template folder found; using default templates.")
+		tpl, err = template.New("whisper").Funcs(funcMap).Parse(defaultTemplate)
+	} else {
+		tpl, err = template.New("whisper").Funcs(funcMap).ParseGlob("template/*.html")
+	}
 	if err != nil {
 		return fmt.Errorf("loadTemplates: %w", err)
 	}
 	return nil
 }
+
+const (
+	defaultTemplate = `{{define "default"}}<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>{{.FrontMatter.Title}}</title>
+	</head>
+	<body>
+		{{.Content}}
+		<hr/>
+		<ul>{{ $p := .Page.Path}}{{range sortbyname (dir .Page.Path)}}
+			<li><a href="{{join $p .Filename}}">{{if eq ".md" (ext .Filename)}}{{.FrontMatter.Title}}{{else}}{{.Filename}}{{end}}</a> {{.FrontMatter.Date.String}}</li>
+		{{end}}</ul>
+		<hr/>
+		<a href="/">Home</a>
+	</body>
+</html>
+{{end}}{{define "image"}}<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>{{.FrontMatter.Title}}</title>
+	</head>
+	<body>		
+		{{.Content}}
+		<hr/>
+		<h3>{{.FrontMatter.Title}}</h1>
+		<img src="{{join .Page.Path .Page.Filename}}" alt="{{.FrontMatter.Title}}"/>
+		<hr/>
+		<ul>{{ $p := .Page.Path}}{{range sortbyname (dir .Page.Path)}}
+			<li><a href="{{join $p .Filename}}">{{if eq ".md" (ext .Filename)}}{{.FrontMatter.Title}}{{else}}{{.Filename}}{{end}}</a> {{.FrontMatter.Date.String}}</li>
+		{{end}}</ul>
+		<hr/>
+		<a href="/">Home</a>
+	</body>
+</html>
+{{end}}`
+)
