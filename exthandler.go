@@ -48,14 +48,18 @@ func extHandler(defaultHandler http.Handler, defaultExpiry time.Duration, extens
 			front, y, modTime, err = cachedRenderMarkdown(fn)
 			if err == nil {
 				foundMD = true
+				// Check for redirect
+				if front.Redirect != "" {
+					http.Redirect(w, r, front.Redirect, http.StatusFound)
+					return
+				}
 			} else if !errors.Is(err, os.ErrNotExist) {
 				log.Printf("extHandler: %s", err)
 				serverError(w, r, err.Error())
 				return
-			}
-			// Check for redirect
-			if front.Redirect != "" {
-				http.Redirect(w, r, front.Redirect, http.StatusFound)
+			} else if ext == ".md" {
+				// user was looking for .md file specifically but it doesn't exist
+				notFound(w, r)
 				return
 			}
 			if ext == ".md" {
