@@ -45,11 +45,12 @@ _whisper_ uses standard Go templates from the `html/template` package. Templates
 
     // frontMatter holds data scraped from a Markdown page.
     type frontMatter struct {
-        Title    string    `toml:"title" comment:"Title of this page"`
-        Date     time.Time `toml:"date" comment:"Date the article appears"`
-        Template string    `toml:"template" comment:"The name of the template to use"`
-        Tags     []string  `toml:"tags" comment:"Tags to assign to this article"`
-	    Expires time.Duration `toml:"expires" comment:"Use for pages that need an Expires header"`
+        Title    string        `toml:"title" comment:"Title of this page"`
+        Date     time.Time     `toml:"date" comment:"Date the article appears"`
+        Template string        `toml:"template" comment:"The name of the template to use"`
+        Tags     []string      `toml:"tags" comment:"Tags to assign to this article"`
+	    Expires  time.Duration `toml:"expires" comment:"Use for pages that need an Expires header"`
+	    Redirect string        `toml:"redirect" comment:"Issue a redirect to another location"`
     }
 
     // pageInfo has information about the current page.
@@ -69,11 +70,22 @@ _whisper_ uses standard Go templates from the `html/template` package. Templates
 
 Functions are added to the template for your convenience.
 
-Function                       | Description
--------------------------------|------------
-`dir(path string) []file`      | Return the contents of the given folder, excluding special files and subfolders.
-`join(parts ...string) string` | The same as path.Join
-`ext(path string) string`      | The same as path.Ext
+Function                            | Description
+------------------------------------|------------
+`dir(path string) []file`           | Return the contents of the given folder, excluding special files and subfolders.
+`sortbyname([]file) []file`         | Sort by name (reverse)
+`sortbytime([]file) []file`         | Sort by time (reverse)
+`match(string, ...string) bool`     | Match string against file patterns
+`filter([]file, ...string) []file`  | Filter list against file patterns
+`join(parts ...string) string`      | The same as path.Join
+`ext(path string) string`           | The same as path.Ext
+`prev([]file, string) *file`        | Find the previous file based on Filename
+`next([]file, string) *file`        | Find the next file based on Filename
+`reverse([]file) []file`            | Reverse the list
+`trimsuffix(string, string) string` | The same as strings.TrimSuffix
+`trimspace(string) string `         | The same as strings.TrimSpace
+`markdown(string) template.HTML`    | Render Markdown file into HTML
+`frontmatter(string) *frontMatter`  | Read front matter from file
 
 `file` is defined as:
 

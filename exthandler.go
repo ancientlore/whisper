@@ -53,6 +53,11 @@ func extHandler(defaultHandler http.Handler, defaultExpiry time.Duration, extens
 				serverError(w, r, err.Error())
 				return
 			}
+			// Check for redirect
+			if front.Redirect != "" {
+				http.Redirect(w, r, front.Redirect, http.StatusFound)
+				return
+			}
 			if ext == ".md" {
 				fn = strings.TrimSuffix(fn, ".md")
 			}

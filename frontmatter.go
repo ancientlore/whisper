@@ -17,6 +17,7 @@ type frontMatter struct {
 	Template string        `toml:"template" comment:"The name of the template to use"`
 	Tags     []string      `toml:"tags" comment:"Tags to assign to this article"`
 	Expires  time.Duration `toml:"expires" comment:"Use for pages that need an Expires header"`
+	Redirect string        `toml:"redirect" comment:"Issue a redirect to another location"`
 }
 
 // fmRegexp is the regular expression used to split out front matter.

@@ -1,0 +1,3 @@
++++
+redirect = "/photos/lanterns600"
++++

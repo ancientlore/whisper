@@ -72,6 +72,11 @@ func markdown(defaultHandler http.Handler, defaultExpiry time.Duration) http.Han
 			serverError(w, r, err.Error())
 			return
 		}
+		// Check for redirect
+		if front.Redirect != "" {
+			http.Redirect(w, r, front.Redirect, http.StatusFound)
+			return
+		}
 		// prepare template data
 		p, bn := path.Split(r.URL.Path)
 		var data = data{
