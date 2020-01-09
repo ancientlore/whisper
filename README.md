@@ -2,6 +2,8 @@
 
 A web server mainly oriented at media serving for small websites.
 
+![whisper](example/static/dog.png)
+
 ## Conventions
 
 In general, _whisper_ serves static content from the location it's found - making it easy to structure your site how you want. There is special handling for certain content like Markdown files.
