@@ -75,6 +75,11 @@ func loadSitemapFiles() ([]string, time.Time, error) {
 		if containsSpecialFile(path) {
 			return nil
 		}
+		var fm frontMatter
+		err = readFrontMatter(path, &fm)
+		if err != nil {
+			log.Printf("loadSitemapFiles: %s", err)
+		}
 		if info.Name() == "index.md" {
 			path = strings.TrimSuffix(path, "index.md")
 		}
@@ -84,7 +89,9 @@ func loadSitemapFiles() ([]string, time.Time, error) {
 		if info.ModTime().After(maxTime) {
 			maxTime = info.ModTime()
 		}
-		result = append(result, filepath.ToSlash(path))
+		if fm.Date.Before(time.Now()) {
+			result = append(result, filepath.ToSlash(path))
+		}
 		return nil
 	})
 	return result, maxTime, err
