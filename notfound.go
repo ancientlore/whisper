@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"log"
 	"net/http"
@@ -12,23 +11,18 @@ import (
 
 // notFound is a handler for rendering our 404 page.
 func notFound(w http.ResponseWriter, r *http.Request) {
-	var d data
-	d.FrontMatter.Title = "Not Found"
-	d.Page.Path, d.Page.Filename = path.Split(r.URL.Path)
-	var out bytes.Buffer
-	err := tpl.ExecuteTemplate(&out, "notfound", d)
-	if err != nil {
-		// This is hacky but template package doesn't make it nice to see the error type
-		if !strings.HasSuffix(err.Error(), "is undefined") {
-			log.Printf("notFound: %s", err)
-		}
+	notfoundTpl := tpl.Lookup("notfound")
+	if notfoundTpl == nil {
 		http.NotFound(w, r)
 		return
 	}
+	var d data
+	d.FrontMatter.Title = "Not Found"
+	d.Page.Path, d.Page.Filename = path.Split(r.URL.Path)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusNotFound)
-	_, err = w.Write(out.Bytes())
+	err := notfoundTpl.Execute(w, d)
 	if err != nil {
 		log.Printf("notFound: %s", err)
 	}
