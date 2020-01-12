@@ -56,12 +56,17 @@ func main() {
 	log.Printf("Changed to %q directory.", *fRoot)
 
 	// Parse templates
-	err = loadTemplates()
+	custom, err := loadTemplates()
 	if err != nil {
 		log.Printf("Cannot parse templates: %s", err)
 		os.Exit(2)
 	}
+	if !custom {
+		log.Print("ERROR: No template folder found; using default templates.")
+	}
+	tpl, mt := getTemplates()
 	log.Printf("Loaded templates: %s", tpl.DefinedTemplates())
+	log.Printf("Templates last modified: %s", mt.In(gmtZone).Format(time.RFC1123))
 
 	// Parse sitemap template
 	ok, err := loadSitemapTemplate()

@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 // pageInfo has information about the current page.
@@ -29,11 +30,19 @@ type data struct {
 	Message     string        // Passed to error or 404 templates
 }
 
-// tpl stores the site's HTML templates.
-var tpl *template.Template
+// tplSite stores the site's HTML templates.
+var tplSite *template.Template
 
-// loadTemplates loads and parses the HTML templates.
-func loadTemplates() error {
+// tplLastModTime stores the last time the templates were modified.
+var tplLastModTime time.Time
+
+// getTemplates returns the templates and last time they were modified.
+func getTemplates() (*template.Template, time.Time) {
+	return tplSite, tplLastModTime
+}
+
+// loadTemplates loads and parses the HTML templates, returning true if custom templates were found.
+func loadTemplates() (bool, error) {
 	var err error
 	funcMap := template.FuncMap{
 		"dir":         dir,
@@ -52,17 +61,47 @@ func loadTemplates() error {
 		"markdown":    md,
 		"frontmatter": fm,
 	}
+	// Check if we are using default templates
 	fi, err := os.Stat("template")
 	if errors.Is(err, os.ErrNotExist) || (err == nil && !fi.IsDir()) {
-		log.Print("ERROR: No template folder found; using default templates.")
-		tpl, err = template.New("whisper").Funcs(funcMap).Parse(defaultTemplate)
-	} else {
-		tpl, err = template.New("whisper").Funcs(funcMap).ParseGlob("template/*.html")
+		tplSite, err = template.New("whisper").Funcs(funcMap).Parse(defaultTemplate)
+		if err != nil {
+			return false, fmt.Errorf("loadTemplates: %w", err)
+		}
+		// tplLasModTime stays set to zero
+		return false, nil
 	}
+	// use custom templates
+	tplSite, err = template.New("whisper").Funcs(funcMap).ParseGlob("template/*.html")
 	if err != nil {
-		return fmt.Errorf("loadTemplates: %w", err)
+		return true, fmt.Errorf("loadTemplates: %w", err)
 	}
-	return nil
+	tplLastModTime, err = getTplModTime("template/*.html")
+	if err != nil {
+		return true, fmt.Errorf("loadTemplates: %w", err)
+	}
+	return true, nil
+}
+
+// getTplModTime gets the latest modification time of the templates.
+func getTplModTime(glob string) (time.Time, error) {
+	var maxTime time.Time
+	files, err := filepath.Glob(glob)
+	if err != nil {
+		return maxTime, fmt.Errorf("getTplModTime: %w", err)
+	}
+	for _, file := range files {
+		fi, err := os.Stat(file)
+		if err != nil {
+			return maxTime, fmt.Errorf("getTplModTime: %w", err)
+		}
+		if !fi.IsDir() {
+			if maxTime.Before(fi.ModTime()) {
+				maxTime = fi.ModTime()
+			}
+		}
+	}
+	return maxTime, nil
 }
 
 const (

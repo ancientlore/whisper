@@ -8,6 +8,7 @@ import (
 
 // serverError is a handler for rendering our error page if defined.
 func serverError(w http.ResponseWriter, r *http.Request, errMsg string) {
+	tpl, _ := getTemplates()
 	errTpl := tpl.Lookup("error")
 	if errTpl == nil {
 		http.Error(w, errMsg, http.StatusInternalServerError)

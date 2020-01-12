@@ -11,6 +11,7 @@ import (
 
 // notFound is a handler for rendering our 404 page.
 func notFound(w http.ResponseWriter, r *http.Request) {
+	tpl, _ := getTemplates()
 	notfoundTpl := tpl.Lookup("notfound")
 	if notfoundTpl == nil {
 		http.NotFound(w, r)

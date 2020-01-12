@@ -156,6 +156,7 @@ func initTemplateCache(cacheBytes int64, cacheDuration time.Duration) {
 			)
 			data := ctx.Value(ctxKey("data")).(data)
 			// log.Print(data)
+			tpl, _ := getTemplates()
 			err = tpl.ExecuteTemplate(&buf, q.Get("templateName"), data)
 			if err != nil {
 				return fmt.Errorf("executeTemplate group: %w", err)

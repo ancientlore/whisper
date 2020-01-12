@@ -85,6 +85,10 @@ func markdown(defaultHandler http.Handler, defaultExpiry time.Duration) http.Han
 			templateName = data.FrontMatter.Template
 		}
 		var out bytes.Buffer
+		tpl, tplModTime := getTemplates()
+		if tplModTime.After(modTime) {
+			modTime = tplModTime
+		}
 		err = tpl.ExecuteTemplate(&out, templateName, data)
 		if err != nil {
 			log.Printf("markdown: %s", err)

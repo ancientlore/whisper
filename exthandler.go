@@ -108,6 +108,10 @@ func extHandler(defaultHandler http.Handler, defaultExpiry time.Duration, extens
 			tplName = data.FrontMatter.Template
 		}
 		var out bytes.Buffer
+		tpl, tplModTime := getTemplates()
+		if tplModTime.After(modTime) {
+			modTime = tplModTime
+		}
 		err = tpl.ExecuteTemplate(&out, tplName, data)
 		if err != nil {
 			log.Printf("extHandler: %s", err)

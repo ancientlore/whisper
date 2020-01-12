@@ -40,6 +40,10 @@ func sitemap(w http.ResponseWriter, r *http.Request) {
 		serverError(w, r, err.Error())
 		return
 	}
+	_, tplModTime := getTemplates()
+	if tplModTime.After(modTime) {
+		modTime = tplModTime
+	}
 	var out bytes.Buffer
 	err = sitemapTpl.ExecuteTemplate(&out, "sitemap", files)
 	if err != nil {
