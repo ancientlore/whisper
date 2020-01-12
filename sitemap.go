@@ -80,23 +80,68 @@ func loadSitemapFiles() ([]string, time.Time, error) {
 			return nil
 		}
 		var fm frontMatter
-		err = readFrontMatter(path, &fm)
-		if err != nil {
-			log.Printf("loadSitemapFiles: %s", err)
-		}
 		if info.Name() == "index.md" {
+			err = readFrontMatter(path, &fm)
+			if err != nil {
+				log.Printf("loadSitemapFiles: %s", err)
+			}
 			path = strings.TrimSuffix(path, "index.md")
 		}
 		if strings.HasSuffix(path, ".md") {
+			err = readFrontMatter(path, &fm)
+			if err != nil {
+				log.Printf("loadSitemapFiles: %s", err)
+			}
 			path = strings.TrimSuffix(path, ".md")
 		}
 		if info.ModTime().After(maxTime) {
 			maxTime = info.ModTime()
 		}
 		if fm.Date.Before(time.Now()) {
-			result = append(result, filepath.ToSlash(path))
+			r := filepath.ToSlash(path)
+			if !alreadyAdded(result, r) {
+				result = append(result, r)
+			}
+			if hasImageFolderPrefix(r) && hasImageExtention(r) {
+				ext := filepath.Ext(r)
+				r = strings.TrimSuffix(r, ext)
+				if !alreadyAdded(result, r) {
+					result = append(result, r)
+				}
+			}
 		}
 		return nil
 	})
 	return result, maxTime, err
+}
+
+func alreadyAdded(arr []string, r string) bool {
+	c := 0
+	for i := len(arr) - 1; i >= 0 && c < 4; i-- {
+		if arr[i] == r {
+			return true
+		}
+		c++
+	}
+	return false
+}
+
+func hasImageFolderPrefix(s string) bool {
+	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
+	for _, f := range imageFolders {
+		if strings.HasPrefix(s, f) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasImageExtention(s string) bool {
+	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
+	for _, ext := range imageTypes {
+		if strings.HasSuffix(s, ext) {
+			return true
+		}
+	}
+	return false
 }
