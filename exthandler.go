@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -120,6 +121,7 @@ func extHandler(defaultHandler http.Handler, defaultExpiry time.Duration, extens
 		}
 		// Set headers
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Length", strconv.Itoa(out.Len()))
 		expiry := defaultExpiry
 		if data.FrontMatter.Expires != 0 {
 			expiry = data.FrontMatter.Expires
@@ -128,7 +130,11 @@ func extHandler(defaultHandler http.Handler, defaultExpiry time.Duration, extens
 			w.Header().Set("Expires", time.Now().Add(expiry).In(gmtZone).Format(time.RFC1123))
 		}
 		// w.Header().Set("Last-Modified", s.ModTime().Format(time.RFC1123))
-		http.ServeContent(w, r, "", modTime, bytes.NewReader(out.Bytes()))
+		// http.ServeContent(w, r, "", modTime, bytes.NewReader(out.Bytes()))
+		_, err = w.Write(out.Bytes())
+		if err != nil {
+			log.Printf("markdown: %s", err)
+		}
 	})
 }
 
