@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 )
 
@@ -19,11 +18,12 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 	}
 	var d data
 	d.FrontMatter.Title = "Not Found"
-	d.Page.Path, d.Page.Filename = path.Split(r.URL.Path)
+	d.Page.Path, d.Page.Filename = "/", "404 Not Found"
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusNotFound)
-	err := notfoundTpl.Execute(w, d)
+	// err := notfoundTpl.Execute(w, d)
+	err := cachedExecuteTemplate(w, "notfound", d)
 	if err != nil {
 		log.Printf("notFound: %s", err)
 	}
