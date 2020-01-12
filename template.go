@@ -10,6 +10,25 @@ import (
 	"strings"
 )
 
+// pageInfo has information about the current page.
+type pageInfo struct {
+	Path     string // path from URL
+	Filename string // end portion (file) from URL
+}
+
+// Pathname joins the path and filename.
+func (p pageInfo) Pathname() string {
+	return path.Join(p.Path, p.Filename)
+}
+
+// data is what is passed to markdown templates.
+type data struct {
+	FrontMatter frontMatter   // front matter from Markdown file or defaults
+	Page        pageInfo      // information aboout current page
+	Content     template.HTML // rendered Markdown
+	Message     string        // Passed to error or 404 templates
+}
+
 // tpl stores the site's HTML templates.
 var tpl *template.Template
 

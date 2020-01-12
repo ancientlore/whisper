@@ -171,7 +171,7 @@ func cachedExecuteTemplate(w io.Writer, name string, dat interface{}) error {
 		buf groupcache.ByteView
 		q   = make(url.Values, 3)
 	)
-	q.Set("filename", dat.(data).Page.Filename)
+	q.Set("pathname", dat.(data).Page.Pathname())
 	t := quantize(time.Now(), templateCacheDuration, dat.(data).Page.Filename)
 	q.Set("t", strconv.FormatInt(t, 10))
 	q.Set("templateName", name)

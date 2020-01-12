@@ -79,6 +79,7 @@ func main() {
 	initGroupCache()
 	initReadDirCache(2*1024*1024, *fCacheDuration)
 	initMarkdownCache(2*1024*1024, *fCacheDuration)
+	initTemplateCache(2*1024*1024, *fCacheDuration)
 	log.Print("Initialized cache.")
 
 	// Setup handlers

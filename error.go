@@ -6,12 +6,6 @@ import (
 	"path"
 )
 
-// errData adds a message to the template data.
-type errData struct {
-	data
-	Message string
-}
-
 // serverError is a handler for rendering our error page if defined.
 func serverError(w http.ResponseWriter, r *http.Request, errMsg string) {
 	errTpl := tpl.Lookup("error")
@@ -19,7 +13,7 @@ func serverError(w http.ResponseWriter, r *http.Request, errMsg string) {
 		http.Error(w, errMsg, http.StatusInternalServerError)
 		return
 	}
-	var d errData
+	var d data
 	d.FrontMatter.Title = "Server Error"
 	d.Page.Path, d.Page.Filename = path.Split(r.URL.Path)
 	d.Message = errMsg

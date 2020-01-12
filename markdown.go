@@ -17,19 +17,6 @@ import (
 	"github.com/russross/blackfriday/v2"
 )
 
-// pageInfo has information about the current page.
-type pageInfo struct {
-	Path     string
-	Filename string
-}
-
-// data is what is passed to makedown templates.
-type data struct {
-	FrontMatter frontMatter
-	Page        pageInfo
-	Content     template.HTML
-}
-
 var gmtZone *time.Location
 
 // initGMT initialized the GMT zone used in headers.
