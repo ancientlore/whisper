@@ -73,6 +73,10 @@ func sitemap(cacheBytes int64, cacheDuration time.Duration) http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
+		if r.Method != http.MethodGet || r.URL.Path != "/sitemap.txt" {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
 		t := quantize(time.Now(), cacheDuration, "/sitemap.txt")
 		var bv groupcache.ByteView
 		err := cache.Get(context.Background(), strconv.FormatInt(t, 16), groupcache.ByteViewSink(&bv))
