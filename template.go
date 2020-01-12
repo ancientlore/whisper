@@ -27,7 +27,6 @@ type data struct {
 	FrontMatter frontMatter   // front matter from Markdown file or defaults
 	Page        pageInfo      // information aboout current page
 	Content     template.HTML // rendered Markdown
-	Message     string        // Passed to error or 404 templates
 }
 
 // tplSite stores the site's HTML templates.
