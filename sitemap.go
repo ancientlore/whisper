@@ -2,14 +2,20 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"encoding/gob"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/golang/groupcache"
 )
 
 var sitemapTpl *template.Template
@@ -29,31 +35,66 @@ func loadSitemapTemplate() (bool, error) {
 }
 
 // sitemap is an http.HandlerFunc that renders the site map.
-func sitemap(w http.ResponseWriter, r *http.Request) {
-	if sitemapTpl == nil {
-		notFound(w, r)
-		return
+func sitemap(cacheBytes int64, cacheDuration time.Duration) http.HandlerFunc {
+	type sitemapContent struct {
+		ModTime time.Time
 	}
-	files, modTime, err := loadSitemapFiles()
-	if err != nil {
-		log.Printf("sitemap: %s", err)
-		serverError(w, r, err.Error())
-		return
+
+	cache := groupcache.NewGroup("sitemap", cacheBytes, groupcache.GetterFunc(
+		func(ctx context.Context, key string, dest groupcache.Sink) error {
+			// key is only used for quantizing time
+			files, modTime, err := loadSitemapFiles()
+			if err != nil {
+				return fmt.Errorf("sitemap: %w", err)
+			}
+			_, tplModTime := getTemplates()
+			if tplModTime.After(modTime) {
+				modTime = tplModTime
+			}
+			var (
+				out  bytes.Buffer
+				cont sitemapContent
+			)
+			enc := gob.NewEncoder(&out)
+			err = enc.Encode(cont)
+			if err != nil {
+				return fmt.Errorf("sitemap: %w", err)
+			}
+			err = sitemapTpl.ExecuteTemplate(&out, "sitemap", files)
+			if err != nil {
+				return fmt.Errorf("sitemap: %w", err)
+			}
+			dest.SetBytes(out.Bytes())
+			return nil
+		}))
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		if sitemapTpl == nil {
+			http.NotFound(w, r)
+			return
+		}
+		t := quantize(time.Now(), cacheDuration, "/sitemap.txt")
+		var bv groupcache.ByteView
+		err := cache.Get(context.Background(), strconv.FormatInt(t, 16), groupcache.ByteViewSink(&bv))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("sitemap handler: %s", err), http.StatusInternalServerError)
+			return
+		}
+		rdr := bv.Reader()
+		crdr := &creader{Reader: rdr}
+		dec := gob.NewDecoder(crdr)
+		var c sitemapContent
+		err = dec.Decode(&c)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("sitemap handler: %s", err), http.StatusInternalServerError)
+			return
+		}
+		// log.Printf("Read %d", crdr.Count())
+		rdr = bv.SliceFrom(crdr.Count()).Reader()
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		http.ServeContent(w, r, "sitemap.txt", c.ModTime, rdr)
 	}
-	_, tplModTime := getTemplates()
-	if tplModTime.After(modTime) {
-		modTime = tplModTime
-	}
-	var out bytes.Buffer
-	err = sitemapTpl.ExecuteTemplate(&out, "sitemap", files)
-	if err != nil {
-		log.Printf("sitemap: %s", err)
-		serverError(w, r, err.Error())
-		return
-	}
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	http.ServeContent(w, r, "sitemap.txt", modTime, bytes.NewReader(out.Bytes()))
 }
 
 // loadSitemap reads the sitemap files.
