@@ -6,7 +6,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"html/template"
-	"io"
 	"net/url"
 	"strconv"
 	"time"
@@ -14,19 +13,10 @@ import (
 	"github.com/golang/groupcache"
 )
 
-type cachedDir struct {
-	Files   []file
-	ModTime time.Time
-}
-
 var (
-	peers                   *groupcache.HTTPPool
-	dirListingCache         *groupcache.Group
-	dirListingCacheDuration time.Duration
-	markdownCache           *groupcache.Group
-	markdownCacheDuration   time.Duration
-	templateCache           *groupcache.Group
-	templateCacheDuration   time.Duration
+	peers                 *groupcache.HTTPPool
+	markdownCache         *groupcache.Group
+	markdownCacheDuration time.Duration
 )
 
 func initGroupCache() {
@@ -34,55 +24,6 @@ func initGroupCache() {
 	peers = groupcache.NewHTTPPool(me)
 	// Whenever peers change:
 	// peers.Set("http://10.0.0.1", "http://10.0.0.2", "http://10.0.0.3")
-}
-
-func initReadDirCache(cacheBytes int64, cacheDuration time.Duration) {
-	dirListingCacheDuration = cacheDuration
-	dirListingCache = groupcache.NewGroup("readDir", cacheBytes, groupcache.GetterFunc(
-		func(ctx context.Context, key string, dest groupcache.Sink) error {
-			q, err := url.ParseQuery(key)
-			if err != nil {
-				return fmt.Errorf("dirListing group: %w", err)
-			}
-			// log.Printf("Calling readDir %s", q.Encode())
-			var (
-				d   cachedDir
-				buf bytes.Buffer
-			)
-			d.Files, d.ModTime, err = readDir(q.Get("folderpath"))
-			if err != nil {
-				return fmt.Errorf("dirListing group: %w", err)
-			}
-			enc := gob.NewEncoder(&buf)
-			err = enc.Encode(d)
-			if err != nil {
-				return fmt.Errorf("dirListing group: %w", err)
-			}
-			dest.SetBytes(buf.Bytes())
-			return nil
-		}))
-}
-
-func cachedReadDir(folderPath string) ([]file, time.Time, error) {
-	var (
-		data []byte
-		q    = make(url.Values, 2)
-		d    cachedDir
-	)
-	q.Set("folderpath", folderPath)
-	t := quantize(time.Now(), dirListingCacheDuration, folderPath)
-	q.Set("t", strconv.FormatInt(t, 10))
-	// log.Printf("cachedReadDir %s", q.Encode())
-	err := dirListingCache.Get(context.Background(), q.Encode(), groupcache.AllocatingByteSliceSink(&data))
-	if err != nil {
-		return nil, d.ModTime, fmt.Errorf("cachedReadDir: %w", err)
-	}
-	dec := gob.NewDecoder(bytes.NewReader(data))
-	err = dec.Decode(&d)
-	if err != nil {
-		return nil, d.ModTime, fmt.Errorf("cachedReadDir: %w", err)
-	}
-	return d.Files, d.ModTime, nil
 }
 
 type cachedMarkdown struct {
@@ -138,53 +79,4 @@ func cachedRenderMarkdown(filename string) (*frontMatter, template.HTML, time.Ti
 		return nil, "", d.ModTime, fmt.Errorf("cachedRenderMarkdown: %w", err)
 	}
 	return d.FrontMatter, d.Content, d.ModTime, nil
-}
-
-type ctxKey string
-
-func initTemplateCache(cacheBytes int64, cacheDuration time.Duration) {
-	templateCacheDuration = cacheDuration
-	templateCache = groupcache.NewGroup("executeTemplate", cacheBytes, groupcache.GetterFunc(
-		func(ctx context.Context, key string, dest groupcache.Sink) error {
-			q, err := url.ParseQuery(key)
-			if err != nil {
-				return fmt.Errorf("executeTemplate group: %w", err)
-			}
-			// log.Printf("Calling executeTemplate %s", q.Encode())
-			var (
-				buf bytes.Buffer
-			)
-			data := ctx.Value(ctxKey("data")).(data)
-			// log.Print(data)
-			tpl, _ := getTemplates()
-			err = tpl.ExecuteTemplate(&buf, q.Get("templateName"), data)
-			if err != nil {
-				return fmt.Errorf("executeTemplate group: %w", err)
-			}
-
-			dest.SetBytes(buf.Bytes())
-			return nil
-		}))
-}
-
-func cachedExecuteTemplate(w io.Writer, name string, dat interface{}) error {
-	var (
-		buf groupcache.ByteView
-		q   = make(url.Values, 3)
-	)
-	q.Set("pathname", dat.(data).Page.Pathname())
-	t := quantize(time.Now(), templateCacheDuration, dat.(data).Page.Filename)
-	q.Set("t", strconv.FormatInt(t, 10))
-	q.Set("templateName", name)
-	ctx := context.WithValue(context.Background(), ctxKey("data"), dat)
-	// log.Printf("cachedExecuteTemplate %s", q.Encode())
-	err := templateCache.Get(ctx, q.Encode(), groupcache.ByteViewSink(&buf))
-	if err != nil {
-		return fmt.Errorf("cachedExecuteTemplate: %w", err)
-	}
-	_, err = buf.WriteTo(w)
-	if err != nil {
-		return fmt.Errorf("cachedExecuteTemplate: %w", err)
-	}
-	return nil
 }
