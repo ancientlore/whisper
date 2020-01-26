@@ -17,8 +17,10 @@ var (
 	templateCacheDuration time.Duration
 )
 
+// ctxKey is the type used to hold data passed to a template execution.
 type ctxKey string
 
+// initTemplateCache initializes the template cache of the given size and expiry.
 func initTemplateCache(cacheBytes int64, cacheDuration time.Duration) {
 	templateCacheDuration = cacheDuration
 	templateCache = groupcache.NewGroup("executeTemplate", cacheBytes, groupcache.GetterFunc(
@@ -44,6 +46,10 @@ func initTemplateCache(cacheBytes int64, cacheDuration time.Duration) {
 		}))
 }
 
+// cachedExecuteTemplate is a version of template.ExecuteTemplate that provides caching.
+// dat is passed via a context key of type ctxKey, and it is assumed that dat does
+// not change for a given template name and pathname. In most scenarious that would
+// be a bad assumption, but the data we pass actually doesn't change in our case.
 func cachedExecuteTemplate(w io.Writer, name string, dat interface{}) error {
 	var (
 		buf groupcache.ByteView

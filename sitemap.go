@@ -147,7 +147,7 @@ func loadSitemapFiles() ([]string, time.Time, error) {
 			if !alreadyAdded(result, r) {
 				result = append(result, r)
 			}
-			if hasImageFolderPrefix(r) && hasImageExtention(r) {
+			if hasImageFolderPrefix(r) && hasImageExtension(r) {
 				ext := filepath.Ext(r)
 				r = strings.TrimSuffix(r, ext)
 				if !alreadyAdded(result, r) {
@@ -160,6 +160,7 @@ func loadSitemapFiles() ([]string, time.Time, error) {
 	return result, maxTime, err
 }
 
+// alreadyAdded checks if the last 4 entries already contain the given text.
 func alreadyAdded(arr []string, r string) bool {
 	c := 0
 	for i := len(arr) - 1; i >= 0 && c < 4; i-- {
@@ -171,6 +172,7 @@ func alreadyAdded(arr []string, r string) bool {
 	return false
 }
 
+// hasImageFolderPrefix checks if the entry is in an image folder.
 func hasImageFolderPrefix(s string) bool {
 	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
 	for _, f := range imageFolders {
@@ -181,7 +183,8 @@ func hasImageFolderPrefix(s string) bool {
 	return false
 }
 
-func hasImageExtention(s string) bool {
+// hasImageExtension checks if the path ends in an image type.
+func hasImageExtension(s string) bool {
 	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
 	for _, ext := range imageTypes {
 		if strings.HasSuffix(s, ext) {

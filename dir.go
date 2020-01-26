@@ -34,6 +34,7 @@ func (f filesByTime) Less(i, j int) bool {
 	return !f[i].FrontMatter.Date.Before(f[j].FrontMatter.Date)
 }
 
+// filesByName enabled sorting by file name.
 type filesByName []file
 
 // Len is part of sort.Interface.
@@ -73,6 +74,7 @@ func sortByName(f []file) []file {
 	return f
 }
 
+// reverse reverses the order of the file list.
 func reverse(f []file) []file {
 	j := len(f) - 1
 	for i := 0; i < len(f)/2; i++ {

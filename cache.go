@@ -14,24 +14,18 @@ import (
 )
 
 var (
-	peers                 *groupcache.HTTPPool
 	markdownCache         *groupcache.Group
 	markdownCacheDuration time.Duration
 )
 
-func initGroupCache() {
-	me := "http://127.0.0.1"
-	peers = groupcache.NewHTTPPool(me)
-	// Whenever peers change:
-	// peers.Set("http://10.0.0.1", "http://10.0.0.2", "http://10.0.0.3")
-}
-
+// cachedMarkdown holds the data we cache from Markdown rendering.
 type cachedMarkdown struct {
 	FrontMatter *frontMatter
 	Content     template.HTML
 	ModTime     time.Time
 }
 
+// initMarkdownCache initializes the markdown cache with the given size and expiry.
 func initMarkdownCache(cacheBytes int64, cacheDuration time.Duration) {
 	markdownCacheDuration = cacheDuration
 	markdownCache = groupcache.NewGroup("renderMarkdown", cacheBytes, groupcache.GetterFunc(
@@ -59,6 +53,7 @@ func initMarkdownCache(cacheBytes int64, cacheDuration time.Duration) {
 		}))
 }
 
+// cachedRenderMarkdown wraps renderMarkdown and provides caching.
 func cachedRenderMarkdown(filename string) (*frontMatter, template.HTML, time.Time, error) {
 	var (
 		data []byte

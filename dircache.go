@@ -12,6 +12,7 @@ import (
 	"github.com/golang/groupcache"
 )
 
+// cachedDir stores data about cached files and the latest mod time found.
 type cachedDir struct {
 	Files   []file
 	ModTime time.Time
@@ -22,6 +23,7 @@ var (
 	dirListingCacheDuration time.Duration
 )
 
+// initReadDirCache initializes the readDir cache with the given size and expiry.
 func initReadDirCache(cacheBytes int64, cacheDuration time.Duration) {
 	dirListingCacheDuration = cacheDuration
 	dirListingCache = groupcache.NewGroup("readDir", cacheBytes, groupcache.GetterFunc(
@@ -49,6 +51,7 @@ func initReadDirCache(cacheBytes int64, cacheDuration time.Duration) {
 		}))
 }
 
+// cachedReadDir is an analogous implementation of readDir that adds cache support.
 func cachedReadDir(folderPath string) ([]file, time.Time, error) {
 	var (
 		data []byte

@@ -14,6 +14,12 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/facebookgo/flagenv"
+	"github.com/golang/groupcache"
+)
+
+var (
+	gmtZone *time.Location
+	peers   *groupcache.HTTPPool
 )
 
 // main is where it all begins. 😀
@@ -126,4 +132,22 @@ func main() {
 	} else {
 		log.Print("Goodbye.")
 	}
+}
+
+// initGMT initialized the GMT zone used in headers.
+func initGMT() error {
+	var err error
+	gmtZone, err = time.LoadLocation("GMT")
+	if err != nil {
+		gmtZone = time.UTC
+	}
+	return err
+}
+
+// initGroupCache initializes our group cache.
+func initGroupCache() {
+	me := "http://127.0.0.1"
+	peers = groupcache.NewHTTPPool(me)
+	// Whenever peers change:
+	// peers.Set("http://10.0.0.1", "http://10.0.0.2", "http://10.0.0.3")
 }

@@ -18,18 +18,6 @@ import (
 	"github.com/russross/blackfriday/v2"
 )
 
-var gmtZone *time.Location
-
-// initGMT initialized the GMT zone used in headers.
-func initGMT() error {
-	var err error
-	gmtZone, err = time.LoadLocation("GMT")
-	if err != nil {
-		gmtZone = time.UTC
-	}
-	return err
-}
-
 // markdown is an http.HandlerFunc that renders Markdown files into HTML using templates.
 func markdown(defaultHandler http.Handler, defaultExpiry time.Duration) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
