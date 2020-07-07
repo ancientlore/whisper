@@ -20,10 +20,10 @@ func TestExtractFrontMatter(t *testing.T) {
 		 hello`,
 		}
 		expect = [][]string{
-			[]string{``, ``},
-			[]string{`x = 2`, ``},
-			[]string{``, `++++++`},
-			[]string{`x = "+++"`, `hello`},
+			{``, ``},
+			{`x = 2`, ``},
+			{``, `++++++`},
+			{`x = "+++"`, `hello`},
 		}
 	)
 	for i := range tests {
