@@ -10,7 +10,6 @@ require (
 	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/pelletier/go-toml v1.8.0
-	github.com/russross/blackfriday/v2 v2.0.1
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
+	github.com/pelletier/go-toml v1.8.1
+	github.com/russross/blackfriday/v2 v2.1.0
 )
