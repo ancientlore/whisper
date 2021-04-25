@@ -32,6 +32,10 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 // exists will pretest for file existence and render a 404 if the file is not found.
 func existsHandler(defaultHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if containsSpecialFile(r.URL.Path) {
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
 		_, err := os.Stat(strings.TrimPrefix(r.URL.Path, "/"))
 		if errors.Is(err, os.ErrNotExist) {
 			notFound(w, r)
