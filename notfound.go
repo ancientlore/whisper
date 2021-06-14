@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 // notFound is a handler for rendering our 404 page.
@@ -30,7 +31,7 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 }
 
 // exists will pretest for file existence and render a 404 if the file is not found.
-func existsHandler(defaultHandler http.Handler) http.Handler {
+func existsHandler(defaultHandler http.Handler, defaultExpiry time.Duration) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if containsSpecialFile(r.URL.Path) {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
@@ -44,6 +45,9 @@ func existsHandler(defaultHandler http.Handler) http.Handler {
 			log.Printf("existsHandler: %s", err)
 			serverError(w, r, err.Error())
 			return
+		}
+		if defaultExpiry != 0 {
+			w.Header().Set("Expires", time.Now().Add(defaultExpiry).In(gmtZone).Format(time.RFC1123))
 		}
 		defaultHandler.ServeHTTP(w, r)
 	})

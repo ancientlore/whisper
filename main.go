@@ -97,12 +97,12 @@ func main() {
 	http.Handle("/template/", gziphandler.GzipHandler(http.HandlerFunc(notFound)))
 	http.Handle("/sitemap.txt", gziphandler.GzipHandler(http.HandlerFunc(sitemap(1024*1024, *fCacheDuration))))
 	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
-	imageHandler := gziphandler.GzipHandler(extHandler(existsHandler(http.FileServer(http.Dir("."))), *fExpires, imageTypes, "image"))
+	imageHandler := gziphandler.GzipHandler(extHandler(existsHandler(http.FileServer(http.Dir(".")), *fExpires), *fExpires, imageTypes, "image"))
 	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
 	for _, folder := range imageFolders {
 		http.Handle("/"+folder+"/", imageHandler)
 	}
-	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir("."))), *fExpires)))
+	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir(".")), *fExpires), *fExpires)))
 	log.Print("Created handlers.")
 
 	// Create signal handler for graceful shutdown

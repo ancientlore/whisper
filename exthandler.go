@@ -150,6 +150,7 @@ func pathToFile(filename string) string {
 	return filename
 }
 
+/*
 type stringSlice []string
 
 func (a stringSlice) Contains(s string) bool {
@@ -160,3 +161,4 @@ func (a stringSlice) Contains(s string) bool {
 	}
 	return false
 }
+*/
