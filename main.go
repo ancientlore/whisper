@@ -33,6 +33,7 @@ func main() {
 		fRoot              = flag.String("root", ".", "Root of web site.")
 		fCacheDuration     = flag.Duration("cacheduration", time.Minute, "How long to cache content.")
 		fExpires           = flag.Duration("expires", 0, "Default expires header.")
+		fStaticExpires     = flag.Duration("staticexpires", 0, "Default expires header for static content.")
 	)
 	flag.Parse()
 	flagenv.Parse()
@@ -97,12 +98,12 @@ func main() {
 	http.Handle("/template/", gziphandler.GzipHandler(http.HandlerFunc(notFound)))
 	http.Handle("/sitemap.txt", gziphandler.GzipHandler(http.HandlerFunc(sitemap(1024*1024, *fCacheDuration))))
 	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
-	imageHandler := gziphandler.GzipHandler(extHandler(existsHandler(http.FileServer(http.Dir(".")), *fExpires), *fExpires, imageTypes, "image"))
+	imageHandler := gziphandler.GzipHandler(extHandler(existsHandler(http.FileServer(http.Dir(".")), *fStaticExpires), *fExpires, imageTypes, "image"))
 	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
 	for _, folder := range imageFolders {
 		http.Handle("/"+folder+"/", imageHandler)
 	}
-	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir(".")), *fExpires), *fExpires)))
+	http.Handle("/", gziphandler.GzipHandler(markdown(existsHandler(http.FileServer(http.Dir(".")), *fStaticExpires), *fExpires)))
 	log.Print("Created handlers.")
 
 	// Create signal handler for graceful shutdown
