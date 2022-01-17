@@ -11,6 +11,6 @@ require (
 	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/pelletier/go-toml v1.9.4
+	github.com/pelletier/go-toml/v2 v2.0.0-beta.6
 	github.com/russross/blackfriday/v2 v2.1.0
 )

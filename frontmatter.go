@@ -7,17 +7,33 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 )
+
+type duration time.Duration
+
+func (d duration) String() string {
+	return time.Duration(d).String()
+}
+
+func (d duration) MarshalText() (text []byte, err error) {
+	return []byte(time.Duration(d).String()), nil
+}
+
+func (d *duration) UnmarshalText(text []byte) error {
+	p, err := time.ParseDuration(string(text))
+	*d = duration(p)
+	return err
+}
 
 // frontMatter holds data scraped from a Markdown page.
 type frontMatter struct {
-	Title    string        `toml:"title" comment:"Title of this page"`
-	Date     time.Time     `toml:"date" comment:"Date the article appears"`
-	Template string        `toml:"template" comment:"The name of the template to use"`
-	Tags     []string      `toml:"tags" comment:"Tags to assign to this article"`
-	Expires  time.Duration `toml:"expires" comment:"Use for pages that need an Expires header"`
-	Redirect string        `toml:"redirect" comment:"Issue a redirect to another location"`
+	Title    string    `toml:"title"`    // Title of this page
+	Date     time.Time `toml:"date"`     // Date the article appears
+	Template string    `toml:"template"` // The name of the template to use
+	Tags     []string  `toml:"tags"`     // Tags to assign to this article
+	Expires  duration  `toml:"expires"`  // Use for pages that need an Expires header
+	Redirect string    `toml:"redirect"` // Issue a redirect to another location
 }
 
 // fmRegexp is the regular expression used to split out front matter.

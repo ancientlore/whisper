@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 	"github.com/russross/blackfriday/v2"
 )
 
@@ -89,7 +89,7 @@ func markdown(defaultHandler http.Handler, defaultExpiry time.Duration) http.Han
 		w.Header().Set("Content-Length", strconv.Itoa(out.Len()))
 		expiry := defaultExpiry
 		if data.FrontMatter.Expires != 0 {
-			expiry = data.FrontMatter.Expires
+			expiry = time.Duration(data.FrontMatter.Expires)
 		}
 		if expiry != 0 {
 			w.Header().Set("Expires", time.Now().Add(expiry).In(gmtZone).Format(time.RFC1123))

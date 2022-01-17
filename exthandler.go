@@ -124,7 +124,7 @@ func extHandler(defaultHandler http.Handler, defaultExpiry time.Duration, extens
 		w.Header().Set("Content-Length", strconv.Itoa(out.Len()))
 		expiry := defaultExpiry
 		if data.FrontMatter.Expires != 0 {
-			expiry = data.FrontMatter.Expires
+			expiry = time.Duration(data.FrontMatter.Expires)
 		}
 		if expiry != 0 {
 			w.Header().Set("Expires", time.Now().Add(expiry).In(gmtZone).Format(time.RFC1123))
