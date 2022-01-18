@@ -59,6 +59,7 @@ func loadTemplates() (bool, error) {
 		"trimspace":   strings.TrimSpace,
 		"markdown":    md,
 		"frontmatter": fm,
+		"now":         time.Now,
 	}
 	// Check if we are using default templates
 	fi, err := os.Stat("template")

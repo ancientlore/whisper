@@ -85,9 +85,11 @@ Function                            | Description
 `next([]file, string) *file`        | Find the next file based on Filename
 `reverse([]file) []file`            | Reverse the list
 `trimsuffix(string, string) string` | The same as strings.TrimSuffix
+`trimprefix(string, string) string` | The same as strings.TrimPrefix
 `trimspace(string) string `         | The same as strings.TrimSpace
 `markdown(string) template.HTML`    | Render Markdown file into HTML
 `frontmatter(string) *frontMatter`  | Read front matter from file
+`now() time.Time`                   | Current time
 
 `file` is defined as:
 
