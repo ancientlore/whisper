@@ -7,6 +7,8 @@ RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go install
 
 FROM ancientlore/goimg:latest
 COPY --from=builder /go/bin/whisper /usr/local/bin/whisper
+COPY example/static/dog.png /home/www/whisper.png
+COPY example/.index-docker.md /home/www/index.md
 EXPOSE 8080
 ENV ROOT /home/www
 ENTRYPOINT ["/usr/local/bin/whisper"]
