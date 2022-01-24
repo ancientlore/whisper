@@ -68,6 +68,7 @@ func extHandler(defaultHandler http.Handler, defaultExpiry time.Duration, extens
 			}
 		}
 		for _, e := range extensions {
+			log.Printf("extHandler: Stat: %q", fn+e)
 			s, err := os.Stat(fn + e)
 			if errors.Is(err, os.ErrNotExist) {
 				continue

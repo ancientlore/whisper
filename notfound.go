@@ -37,7 +37,9 @@ func existsHandler(defaultHandler http.Handler, defaultExpiry time.Duration) htt
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
-		_, err := os.Stat(strings.TrimPrefix(r.URL.Path, "/"))
+		f := strings.TrimPrefix(r.URL.Path, "/")
+		log.Printf("existsHandler: Stat: %q", f)
+		_, err := os.Stat(f)
 		if errors.Is(err, os.ErrNotExist) {
 			notFound(w, r)
 			return

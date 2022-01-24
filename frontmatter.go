@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"log"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -53,7 +54,8 @@ func extractFrontMatter(x []byte) (fm, r []byte) {
 
 // readFrontMatter extracts and unmarshals front matter from the given file.
 func readFrontMatter(name string, fm *frontMatter) error {
-	b, err := ioutil.ReadFile(name)
+	log.Printf("readFrontMatter: ReadFile: %q", name)
+	b, err := os.ReadFile(name)
 	if err != nil {
 		return fmt.Errorf("readFrontMatter: %w", err)
 	}

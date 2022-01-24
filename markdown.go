@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -127,11 +126,13 @@ func renderMarkdown(filename string) (*frontMatter, template.HTML, time.Time, er
 		modTime time.Time
 	)
 	filename = pathToMarkdown(filename)
+	log.Printf("renderMarkdown: Stat: %q", filename)
 	s, err := os.Stat(filename)
 	if err != nil {
 		return nil, "", modTime, fmt.Errorf("renderMarkdown: %w", err)
 	}
-	b, err := ioutil.ReadFile(filename)
+	log.Printf("renderMarkdown: ReadFile: %q", filename)
+	b, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, "", modTime, fmt.Errorf("renderMarkdown: %w", err)
 	}

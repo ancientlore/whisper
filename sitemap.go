@@ -107,6 +107,7 @@ func loadSitemapFiles() ([]string, time.Time, error) {
 		result  []string
 		maxTime time.Time
 	)
+	log.Printf("loadSitemapFiles: Walk: %q", ".")
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("loadSitemap: %s", err)
@@ -122,6 +123,9 @@ func loadSitemapFiles() ([]string, time.Time, error) {
 			return nil
 		}
 		if containsSpecialFile(path) {
+			return nil
+		}
+		if info.Name() == "whisper.cfg" {
 			return nil
 		}
 		var fm frontMatter

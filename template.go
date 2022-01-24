@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -91,6 +92,7 @@ func getTplModTime(glob string) (time.Time, error) {
 		return maxTime, fmt.Errorf("getTplModTime: %w", err)
 	}
 	for _, file := range files {
+		log.Printf("getTplModTime: Stat: %q", file)
 		fi, err := os.Stat(file)
 		if err != nil {
 			return maxTime, fmt.Errorf("getTplModTime: %w", err)
