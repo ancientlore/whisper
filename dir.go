@@ -152,7 +152,7 @@ func readDir(folderpath string) ([]file, time.Time, error) {
 	}
 	var r []file
 	for _, fi := range arr {
-		if !fi.IsDir() && !containsSpecialFile(fi.Name()) && fi.Name() != "index.md" {
+		if !fi.IsDir() && !containsSpecialFile(fi.Name()) && fi.Name() != "index.md" && fi.Name() != "whisper.cfg" {
 			itm := file{
 				Filename: fi.Name(),
 				FrontMatter: frontMatter{
