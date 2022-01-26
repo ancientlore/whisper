@@ -41,6 +41,7 @@ func main() {
 		fCacheDuration     = flag.Duration("cacheduration", 5*time.Minute, "How long to cache content.")
 		fExpires           = flag.Duration("expires", 0, "Default expires header.")
 		fStaticExpires     = flag.Duration("staticexpires", 0, "Default expires header for static content.")
+		fWaitForFiles      = flag.Bool("wait", false, "Wait for files to appear in root folder before starting up.")
 	)
 	flag.Parse()
 	flagenv.Parse()
@@ -59,6 +60,35 @@ func main() {
 		ReadTimeout:       *fReadTimeout,
 		WriteTimeout:      *fWriteTimeout,
 		ReadHeaderTimeout: *fReadHeaderTimeout,
+	}
+
+	// If requested, wait for files to show up in root folder, up to 60 seconds
+	if *fWaitForFiles {
+		var dir []string
+		for i := 0; i < 60; i++ {
+			d, err := os.ReadDir(*fRoot)
+			if err != nil {
+				log.Printf("os.Dir: %s", err)
+			} else if len(d) > 0 {
+				for _, entry := range d {
+					if entry.IsDir() {
+						dir = append(dir, entry.Name()+"/")
+					} else {
+						dir = append(dir, entry.Name())
+					}
+				}
+				log.Printf("Found files %v", dir)
+				break
+			}
+			if i%10 == 0 {
+				log.Print("Waiting for files...")
+			}
+			time.Sleep(time.Second)
+		}
+		if len(dir) == 0 {
+			log.Printf("No files in root folder")
+			os.Exit(6)
+		}
 	}
 
 	// Switch to site folder
