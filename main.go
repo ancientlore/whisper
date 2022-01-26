@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -64,28 +65,38 @@ func main() {
 
 	// If requested, wait for files to show up in root folder, up to 60 seconds
 	if *fWaitForFiles {
-		var dir []string
+		foundFiles := false
 		for i := 0; i < 60; i++ {
 			d, err := os.ReadDir(*fRoot)
 			if err != nil {
 				log.Printf("os.Dir: %s", err)
 			} else if len(d) > 0 {
+				var dir []string
+				var hasError bool
 				for _, entry := range d {
 					if entry.IsDir() {
 						dir = append(dir, entry.Name()+"/")
 					} else {
 						dir = append(dir, entry.Name())
+						if entry.Name() == "cpln-error.txt" {
+							hasError = true
+							errData, err := os.ReadFile(path.Join(*fRoot, "cpln-error.txt"))
+							log.Printf("cpln-error.txt: %s %v", errData, err)
+						}
 					}
 				}
 				log.Printf("Found files %v", dir)
-				break
+				if !hasError {
+					foundFiles = true
+					break
+				}
 			}
 			if i%10 == 0 {
 				log.Print("Waiting for files...")
 			}
 			time.Sleep(time.Second)
 		}
-		if len(dir) == 0 {
+		if !foundFiles {
 			log.Printf("No files in root folder")
 			os.Exit(6)
 		}
