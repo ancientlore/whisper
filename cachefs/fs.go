@@ -1,4 +1,4 @@
-package cache
+package cachefs
 
 import (
 	"bytes"

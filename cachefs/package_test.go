@@ -1,4 +1,4 @@
-package cache_test
+package cachefs_test
 
 import (
 	"log"

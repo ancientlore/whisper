@@ -1,4 +1,4 @@
-package cache_test
+package cachefs_test
 
 import (
 	"io/fs"
@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ancientlore/whisper/cache"
+	"github.com/ancientlore/whisper/cachefs"
 )
 
 func TestFS(t *testing.T) {
 	const count = 10
-	fileSys := cache.New(os.DirFS("../example"), "folder", 10*1024*1024, 10*time.Second)
+	fileSys := cachefs.New(os.DirFS("../example"), "folder", 10*1024*1024, 10*time.Second)
 	var wg sync.WaitGroup
 	wg.Add(count)
 	for i := 0; i < count; i++ {
