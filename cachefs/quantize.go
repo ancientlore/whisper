@@ -12,6 +12,9 @@ import (
 // can be cached. This function allows us to use a cache like
 // golang/groupcache, which has no expiry mechanism of its own.
 func quantize(t time.Time, d time.Duration, s string) int64 {
+	if d == 0 {
+		return 0
+	}
 	sum := adler32.Checksum([]byte(s))
 	offset := time.Duration(float64(sum) * float64(d) / float64(2<<31) / 4.0)
 	return t.UnixNano() / int64(d.Nanoseconds()+offset.Nanoseconds())
