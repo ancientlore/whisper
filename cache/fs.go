@@ -16,8 +16,8 @@ import (
 	"github.com/golang/groupcache"
 )
 
-// An FS provides cached access to a hierarchical file system.
-type FS struct {
+// An cacheFS provides cached access to a hierarchical file system.
+type cacheFS struct {
 	fs       fs.FS
 	duration time.Duration
 	cache    *groupcache.Group
@@ -32,7 +32,7 @@ type FS struct {
 // Open should reject attempts to open names that do not satisfy
 // fs.ValidPath(name), returning a *PathError with Err set to
 // ErrInvalid or ErrNotExist.
-func (cfs *FS) Open(name string) (fs.File, error) {
+func (cfs *cacheFS) Open(name string) (fs.File, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
@@ -64,9 +64,13 @@ func (cfs *FS) Open(name string) (fs.File, error) {
 
 // New creates a new cached FS around innerFS using groupcache with the given groupName
 // and sizeInBytes. The duration field allows you to use quantized values
-// in order to provide expiration of items in the cache.
-func New(innerFS fs.FS, groupName string, sizeInBytes int64, duration time.Duration) *FS {
-	return &FS{
+// in order to provide expiration of items in the cache. The returned FS is read-only.
+//
+// A limitation is that ReadDir returns directory entries that, when Info() is called,
+// will not return the size, mode, or modification time of the file. This is done
+// to prevent needing to stat each file in the list in order to accumulate the data.
+func New(innerFS fs.FS, groupName string, sizeInBytes int64, duration time.Duration) fs.FS {
+	return &cacheFS{
 		duration: duration,
 		cache: groupcache.NewGroup(groupName, sizeInBytes, groupcache.GetterFunc(
 			func(ctx context.Context, key string, dest groupcache.Sink) error {
