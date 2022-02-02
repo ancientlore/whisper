@@ -10,14 +10,14 @@ import (
 	"time"
 )
 
-// file holds data about a page endpoint.
-type file struct {
+// File holds data about a page endpoint.
+type File struct {
 	FrontMatter FrontMatter
 	Filename    string
 }
 
 // filesByTime is a sorted list of files.
-type filesByTime []file
+type filesByTime []File
 
 // Len is part of sort.Interface.
 func (f filesByTime) Len() int {
@@ -35,7 +35,7 @@ func (f filesByTime) Less(i, j int) bool {
 }
 
 // filesByName enabled sorting by file name.
-type filesByName []file
+type filesByName []File
 
 // Len is part of sort.Interface.
 func (f filesByName) Len() int {
@@ -53,7 +53,7 @@ func (f filesByName) Less(i, j int) bool {
 }
 
 // dir returns a sorted slice of files and is used in templates.
-func (vfs *FS) dir(folderpath string) []file {
+func (vfs *FS) dir(folderpath string) []File {
 	f, err := vfs.readDir(folderpath)
 	if err != nil {
 		log.Printf("dir: %s", err)
@@ -63,19 +63,19 @@ func (vfs *FS) dir(folderpath string) []file {
 }
 
 // sortByName sorts the files by the time in reverse order
-func sortByTime(f []file) []file {
+func sortByTime(f []File) []File {
 	sort.Sort(filesByTime(f))
 	return f
 }
 
 // sortByName sorts the files by the time in reverse order
-func sortByName(f []file) []file {
+func sortByName(f []File) []File {
 	sort.Sort(filesByName(f))
 	return f
 }
 
 // reverse reverses the order of the file list.
-func reverse(f []file) []file {
+func reverse(f []File) []File {
 	j := len(f) - 1
 	for i := 0; i < len(f)/2; i++ {
 		f[i], f[j] = f[j], f[i]
@@ -85,8 +85,8 @@ func reverse(f []file) []file {
 }
 
 // filter trims out non-matching files based on name.
-func filter(f []file, pat ...string) []file {
-	var r []file
+func filter(f []File, pat ...string) []File {
+	var r []File
 	for i := range f {
 		if match(f[i].Filename, pat...) {
 			r = append(r, f[i])
@@ -110,7 +110,7 @@ func match(s string, pat ...string) bool {
 }
 
 // next returns the previous file in the list.
-func next(f []file, current string) *file {
+func next(f []File, current string) *File {
 	for i := range f {
 		if f[i].Filename == current {
 			if i > 0 {
@@ -123,7 +123,7 @@ func next(f []file, current string) *file {
 }
 
 // prev returns the previous file in the list.
-func prev(f []file, current string) *file {
+func prev(f []File, current string) *File {
 	for i := range f {
 		if f[i].Filename == current {
 			if i < len(f)-1 {
@@ -136,7 +136,7 @@ func prev(f []file, current string) *file {
 }
 
 // readDir returns a sorted slice of files.
-func (vfs *FS) readDir(folderpath string) ([]file, error) {
+func (vfs *FS) readDir(folderpath string) ([]File, error) {
 	folderpath = "./" + strings.TrimPrefix(folderpath, "/")
 	folderpath = path.Clean(folderpath)
 	f, err := vfs.fs.Open(folderpath)
@@ -148,10 +148,10 @@ func (vfs *FS) readDir(folderpath string) ([]file, error) {
 	if err != nil {
 		return nil, fmt.Errorf("readDir: %w", err)
 	}
-	var r []file
+	var r []File
 	for _, fi := range arr {
 		if !fi.IsDir() && !containsSpecialFile(fi.Name()) && fi.Name() != "index.md" && !isHiddenFile(fi.Name()) {
-			itm := file{
+			itm := File{
 				Filename: fi.Name(),
 				FrontMatter: FrontMatter{
 					Title: strings.TrimSuffix(fi.Name(), path.Ext(fi.Name())),

@@ -4,19 +4,7 @@ import (
 	"io/fs"
 )
 
-/*
-Types of virtual files:
-
-	Directory
-	Index
-	Sitemap
-	Markdown
-	Image
-
-
-*/
-
-// file represents a cached file
+// virtualFile represents a view of an underlying file.
 type virtualFile struct {
 	fs.File        // Underling file
 	name    string // Name of virtual file
