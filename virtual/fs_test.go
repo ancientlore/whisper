@@ -9,7 +9,7 @@ import (
 )
 
 func TestFS(t *testing.T) {
-	const count = 10
+	const count = 1
 	fileSys := New(os.DirFS("../example"))
 	var wg sync.WaitGroup
 	wg.Add(count)
@@ -59,7 +59,6 @@ func TestFS(t *testing.T) {
 					t.Errorf("Expected %q to have non-zero mod time", path)
 				}
 				t.Log(fi)
-
 				return nil
 			})
 			t.Logf("saw %d entries", numEntries)

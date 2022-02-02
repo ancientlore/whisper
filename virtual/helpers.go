@@ -30,3 +30,25 @@ func containsSpecialFile(name string) bool {
 	}
 	return false
 }
+
+// hasImageFolderPrefix checks if the entry is in an image folder.
+func hasImageFolderPrefix(s string) bool {
+	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
+	for _, f := range imageFolders {
+		if strings.HasPrefix(s, f+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// hasImageExtension checks if the path ends in an image type.
+func hasImageExtension(s string) bool {
+	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
+	for _, ext := range imageTypes {
+		if strings.HasSuffix(s, ext) {
+			return true
+		}
+	}
+	return false
+}
