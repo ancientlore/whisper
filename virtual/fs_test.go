@@ -58,7 +58,7 @@ func TestFS(t *testing.T) {
 				if fi.ModTime().IsZero() {
 					t.Errorf("Expected %q to have non-zero mod time", path)
 				}
-				t.Log(fi)
+				t.Log("\t", fi)
 				return nil
 			})
 			t.Logf("saw %d entries", numEntries)

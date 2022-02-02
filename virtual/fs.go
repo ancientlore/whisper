@@ -16,7 +16,7 @@ type FS struct {
 	tplMutex sync.RWMutex
 }
 
-// New
+// New returns a new FS that presents a virtual view of innerFS.
 func New(innerFS fs.FS) *FS {
 	return &FS{
 		fs: innerFS,
@@ -45,30 +45,48 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 		- If the file is named "sitemap.txt" in the root, process the sitemap template.
 		- Otherwise serve the file as-is.
 	*/
+	// Make sure the path is valid per fs rules
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
+	// Don't show hidden or special files
 	if isHiddenFile(name) || (name != "." && containsSpecialFile(name)) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
 	}
 
+	// open the file with the underlying file system
 	f, err := vfs.fs.Open(name)
 	if err != nil {
+		// for files that don't exist, check for underlying matching files
 		if errors.Is(err, fs.ErrNotExist) {
 			extensions := []string{".md", ".png", ".jpg", ".git", ".jpeg"}
+			// if it's not in an image folder, only check markdown files
 			if !hasImageFolderPrefix(name) {
 				extensions = extensions[:1]
 			}
+			// find file with matching extension
 			for _, ext := range extensions {
 				f, err2 := vfs.fs.Open(name + ext)
 				if err2 == nil {
+					// match found, so return a virtual file
 					return &virtualFile{File: f, name: name}, nil
 				}
 			}
 		}
+		// no matching underlying file; return error from opening the underlying file
 		return f, err
 	}
-	return &virtualFile{name: name, File: f}, nil
+	// check for directory
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	// Directories need to be virtual so that we don't
+	// accidentally pick up the wrong ReadDir implementation.
+	if fi.IsDir() {
+		return &virtualFile{name: name, File: f}, nil
+	}
+	return f, nil
 }
 
 // ReadDir reads the named directory

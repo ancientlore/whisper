@@ -18,9 +18,8 @@ Types of virtual files:
 
 // file represents a cached file
 type virtualFile struct {
-	fs.File
-
-	name string // Virtual name of the file
+	fs.File        // Underling file
+	name    string // Name of virtual file
 }
 
 // Stat returns information about the file.
@@ -46,10 +45,10 @@ func (f *virtualFile) Close() error {
 	return f.File.Close()
 }
 
-// fileInfo holds the metadata about the cached file
+// virtualFileInfo holds the metadata about the cached file but allows you to rename it.
 type virtualFileInfo struct {
-	fs.FileInfo
-	name string
+	fs.FileInfo        // Underlying file information
+	name        string // Name of virtual file
 }
 
 // Name returns the base name of the file.
@@ -58,8 +57,6 @@ func (fi virtualFileInfo) Name() string {
 }
 
 // virtualDirEntry is a special version of fileInfo to represent directory entries.
-// It is lightweight in that it isn't as filled out as if you called Stat
-// on the file itself.
 type virtualDirEntry struct {
 	virtualFileInfo
 }
@@ -71,7 +68,6 @@ func (di virtualDirEntry) Type() fs.FileMode {
 }
 
 // Info returns the FileInfo for the file or subdirectory described by the entry.
-// The returned info is from the time of the directory read.
 func (di virtualDirEntry) Info() (fs.FileInfo, error) {
 	return di.virtualFileInfo, nil
 }
