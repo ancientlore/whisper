@@ -1,15 +1,18 @@
 package virtual
 
 import (
+	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestFS(t *testing.T) {
-	const count = 1
+	const count = 10
 	fileSys, err := New(os.DirFS("../example"))
 	if err != nil {
 		t.Error(err)
@@ -76,4 +79,102 @@ func TestFS(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestReadFile(t *testing.T) {
+	fileSys, err := New(os.DirFS("../example"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	b, err := fs.ReadFile(fileSys, "index")
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(string(b))
+}
+
+func TestReadDir(t *testing.T) {
+	fileSys, err := New(os.DirFS("../example"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	entries, err := fs.ReadDir(fileSys, ".")
+	if err != nil {
+		t.Error(err)
+	}
+	for _, entry := range entries {
+		inf, err := entry.Info()
+		if err != nil {
+			t.Error(err)
+		} else {
+			t.Logf("%s %10d  %s  %s", inf.Mode(), inf.Size(), inf.ModTime().Format(time.UnixDate), inf.Name())
+		}
+	}
+}
+
+func TestOpenRead(t *testing.T) {
+	fileSys, err := New(os.DirFS("../example"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	f, err := fileSys.Open("index")
+	if err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	b := make([]byte, 1024)
+	for {
+		n, err := f.Read(b)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		t.Log(string(b[:n]))
+	}
+}
+
+func TestOpenReadDir(t *testing.T) {
+	fileSys, err := New(os.DirFS("../example"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	f, err := fileSys.Open("photos")
+	if err != nil {
+		t.Error(err)
+	}
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	rdf, ok := f.(fs.ReadDirFile)
+	if !ok {
+		t.Errorf("Not a directory")
+		return
+	}
+
+	entries, err := rdf.ReadDir(0)
+	if err != nil {
+		t.Error(err)
+	} else {
+		for _, entry := range entries {
+			inf, err := entry.Info()
+			if err != nil {
+				t.Error(err)
+			} else {
+				t.Logf("%s %10d  %s  %s", inf.Mode(), inf.Size(), inf.ModTime().Format(time.UnixDate), inf.Name())
+			}
+		}
+	}
 }
