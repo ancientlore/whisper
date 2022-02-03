@@ -7,7 +7,7 @@ Using cachefs is straightforward:
 	groupcache.RegisterPeerPicker(func() groupcache.PeerPicker { return groupcache.NoPeers{} })
 
 	// Create the cached file system with group name "groupName", a 10MB cache, and a ten second expiration
-	cachedFileSystem := cachefs.New(os.DirFS("."), "groupName", 10*1024*1024, 10*time.Second)
+	cachedFileSystem := cachefs.New(os.DirFS("."), &cachefs.Config{GroupName: "groupName", SizeInBytes: 10*1024*1024, Duration: 10*time.Second})
 
 	// Use the file system as usual...
 
@@ -35,7 +35,16 @@ import (
 	"time"
 
 	"github.com/golang/groupcache"
+	"github.com/google/uuid"
 )
+
+// Config stores the configuration settings of your cache.
+type Config struct {
+	GroupName   string        // Name of the groupcache group
+	SizeInBytes int64         // Size of the cache
+	Duration    time.Duration // Duration after which items can expire
+	NoStat      bool          // Don't do extra file Stat calls in ReadDir
+}
 
 // An cacheFS provides cached access to a hierarchical file system.
 type cacheFS struct {
@@ -83,17 +92,20 @@ func (cfs *cacheFS) Open(name string) (fs.File, error) {
 	return &f, nil
 }
 
-// New creates a new cached FS around innerFS using groupcache with the given groupName
-// and sizeInBytes. The duration field allows you to use quantized values
-// in order to provide expiration of items in the cache. The returned FS is read-only.
-//
-// A limitation is that ReadDir returns directory entries that, when Info() is called,
-// will not return the size, mode, or modification time of the file. This is done
-// to prevent needing to stat each file in the list in order to accumulate the data.
-func New(innerFS fs.FS, groupName string, sizeInBytes int64, duration time.Duration) fs.FS {
+// New creates a new cached FS around innerFS using groupcache with the given
+// configuration. The returned FS is read-only. If config is nil, it defaults
+// to a 1MB cache using a random GUID as a name.
+func New(innerFS fs.FS, config *Config) fs.FS {
+	if config == nil {
+		config = &Config{
+			GroupName:   uuid.NewString(),
+			SizeInBytes: 1024 * 1024,
+		}
+	}
+	noStat := config.NoStat
 	return &cacheFS{
-		duration: duration,
-		cache: groupcache.NewGroup(groupName, sizeInBytes, groupcache.GetterFunc(
+		duration: config.Duration,
+		cache: groupcache.NewGroup(config.GroupName, config.SizeInBytes, groupcache.GetterFunc(
 			func(ctx context.Context, key string, dest groupcache.Sink) error {
 				// Parse query which contains quantize info and path
 				q, err := url.ParseQuery(key)
@@ -128,7 +140,7 @@ func New(innerFS fs.FS, groupName string, sizeInBytes int64, duration time.Durat
 					}
 					resultFile.Dirs = make([]dirEntry, len(entries))
 					for i, entry := range entries {
-						/*
+						if !noStat {
 							fi, err := entry.Info()
 							if err != nil {
 								return err
@@ -137,9 +149,10 @@ func New(innerFS fs.FS, groupName string, sizeInBytes int64, duration time.Durat
 							resultFile.Dirs[i].FI.Md = fi.Mode()
 							resultFile.Dirs[i].FI.Sz = fi.Size()
 							resultFile.Dirs[i].FI.Mt = fi.ModTime()
-						*/
-						resultFile.Dirs[i].FI.Nm = entry.Name()
-						resultFile.Dirs[i].FI.Md = entry.Type()
+						} else {
+							resultFile.Dirs[i].FI.Nm = entry.Name()
+							resultFile.Dirs[i].FI.Md = entry.Type()
+						}
 					}
 				} else {
 					// Read file

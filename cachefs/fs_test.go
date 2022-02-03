@@ -13,7 +13,7 @@ import (
 
 func TestFS(t *testing.T) {
 	const count = 10
-	fileSys := cachefs.New(os.DirFS("../example"), "TestFS", 10*1024*1024, 10*time.Second)
+	fileSys := cachefs.New(os.DirFS("../example"), &cachefs.Config{GroupName: "TestFS", SizeInBytes: 10 * 1024 * 1024, Duration: 10 * time.Second})
 	var wg sync.WaitGroup
 	wg.Add(count)
 	for i := 0; i < count; i++ {

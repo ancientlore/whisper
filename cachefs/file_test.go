@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/ancientlore/whisper/cachefs"
 )
@@ -14,7 +13,7 @@ import (
 func TestReadDir(t *testing.T) {
 	const count = 10
 	rootFS := os.DirFS(".")
-	fileSys := cachefs.New(rootFS, "TestReadDir", 1*1024*1024, 10*time.Second)
+	fileSys := cachefs.New(rootFS, nil)
 
 	f, err := fileSys.Open(".")
 	if err != nil {
@@ -64,7 +63,7 @@ func TestReadDir(t *testing.T) {
 func TestReadDirLoop(t *testing.T) {
 	const count = 10
 	rootFS := os.DirFS(".")
-	fileSys := cachefs.New(rootFS, "TestReadDirLoop", 1*1024*1024, 10*time.Second)
+	fileSys := cachefs.New(rootFS, nil)
 
 	f, err := fileSys.Open(".")
 	if err != nil {
