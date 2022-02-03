@@ -18,6 +18,15 @@ type renderFile struct {
 	virtualFile
 
 	reader io.ReadSeeker // Main Reader to use
+	length int64
+}
+
+func (f *renderFile) Stat() (fs.FileInfo, error) {
+	fi, err := f.virtualFile.Stat()
+	if err != nil {
+		return nil, err
+	}
+	return renderFileInfo{FileInfo: fi, size: f.length}, nil
 }
 
 // Read reads up to len(b) bytes from the File. It returns the number of bytes read
@@ -36,6 +45,16 @@ func (f *renderFile) Read(b []byte) (int, error) {
 // underlying object is implementation-dependent.
 func (f *renderFile) Seek(offset int64, whence int) (int64, error) {
 	return f.reader.Seek(offset, whence)
+}
+
+type renderFileInfo struct {
+	fs.FileInfo
+
+	size int64
+}
+
+func (rfi renderFileInfo) Size() int64 {
+	return rfi.size
 }
 
 func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
@@ -100,6 +119,7 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 			name: bn,
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
+		length: int64(wtr.Len()),
 	}, nil
 }
 
@@ -144,6 +164,7 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 			name: bn,
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
+		length: int64(wtr.Len()),
 	}, nil
 }
 
@@ -158,5 +179,6 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 			name: bn,
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
+		length: int64(wtr.Len()),
 	}, nil
 }

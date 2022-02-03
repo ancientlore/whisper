@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -66,7 +67,9 @@ func TestFS(t *testing.T) {
 				}
 				if !fi.IsDir() {
 					if fi.Size() == 0 {
-						t.Errorf("Expected %q to have non-zero size", path)
+						if fi.Name() != "err" {
+							t.Errorf("Expected %q to have non-zero size", path)
+						}
 					}
 				}
 				if fi.ModTime().IsZero() {
@@ -176,5 +179,70 @@ func TestOpenReadDir(t *testing.T) {
 				t.Logf("%s %10d  %s  %s", inf.Mode(), inf.Size(), inf.ModTime().Format(time.UnixDate), inf.Name())
 			}
 		}
+	}
+}
+
+func TestHttpReadDir(t *testing.T) {
+	fileSys, err := New(os.DirFS("../example"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	hfs := http.FS(fileSys)
+
+	f, err := hfs.Open("/")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	entries, err := f.Readdir(0)
+	if err != nil {
+		t.Error(err)
+		return
+	} else {
+		for _, entry := range entries {
+			if err != nil {
+				t.Error(err)
+			} else {
+				t.Logf("%s %10d  %s  %s", entry.Mode(), entry.Size(), entry.ModTime().Format(time.UnixDate), entry.Name())
+			}
+		}
+	}
+}
+
+func TestHttpRead(t *testing.T) {
+	fileSys, err := New(os.DirFS("../example"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	hfs := http.FS(fileSys)
+
+	f, err := hfs.Open("/index")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	b := make([]byte, 1024)
+	for {
+		n, err := f.Read(b)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		t.Log(string(b[:n]))
 	}
 }

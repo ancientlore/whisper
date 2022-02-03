@@ -87,6 +87,7 @@ func (f *virtualDir) ReadDir(n int) ([]fs.DirEntry, error) {
 			// new version hides the markdown
 			newNm := strings.TrimSuffix(nm, ".md")
 			if _, ok := added[newNm]; !ok {
+				// TODO: info doesn't have the right size
 				vEntries = append(vEntries, virtualDirEntry{virtualFileInfo: virtualFileInfo{name: newNm, FileInfo: info}})
 				added[newNm] = true
 			}
@@ -98,6 +99,7 @@ func (f *virtualDir) ReadDir(n int) ([]fs.DirEntry, error) {
 			a := strings.Split(nm, ".")
 			newNm := strings.TrimSuffix(nm, "."+a[len(a)-1])
 			if _, ok := added[newNm]; !ok {
+				// TODO: info doesn't have the right size
 				vEntries = append(vEntries, virtualDirEntry{virtualFileInfo: virtualFileInfo{name: newNm, FileInfo: info}})
 				added[newNm] = true
 			}
@@ -107,6 +109,7 @@ func (f *virtualDir) ReadDir(n int) ([]fs.DirEntry, error) {
 			if err != nil {
 				return nil, err
 			}
+			// TODO: info doesn't have the right size
 			vEntries = append(vEntries, virtualDirEntry{virtualFileInfo: virtualFileInfo{name: nm, FileInfo: info}})
 		default:
 			vEntries = append(vEntries, entry)
