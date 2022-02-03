@@ -138,20 +138,29 @@ func New(innerFS fs.FS, config *Config) fs.FS {
 					if err != nil {
 						return err
 					}
-					resultFile.Dirs = make([]dirEntry, len(entries))
-					for i, entry := range entries {
+					resultFile.Dirs = make([]dirEntry, 0, len(entries))
+					for _, entry := range entries {
 						if !noStat {
 							fi, err := entry.Info()
 							if err != nil {
-								return err
+								// Pretend it doesn't exist, like (*os.File).Readdir does.
+								continue
 							}
-							resultFile.Dirs[i].FI.Nm = fi.Name()
-							resultFile.Dirs[i].FI.Md = fi.Mode()
-							resultFile.Dirs[i].FI.Sz = fi.Size()
-							resultFile.Dirs[i].FI.Mt = fi.ModTime()
+							resultFile.Dirs = append(resultFile.Dirs, dirEntry{
+								FI: fileInfo{
+									Nm: fi.Name(),
+									Md: fi.Mode(),
+									Sz: fi.Size(),
+									Mt: fi.ModTime(),
+								},
+							})
 						} else {
-							resultFile.Dirs[i].FI.Nm = entry.Name()
-							resultFile.Dirs[i].FI.Md = entry.Type()
+							resultFile.Dirs = append(resultFile.Dirs, dirEntry{
+								FI: fileInfo{
+									Nm: entry.Name(),
+									Md: entry.Type(),
+								},
+							})
 						}
 					}
 				} else {
