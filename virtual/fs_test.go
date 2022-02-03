@@ -10,7 +10,11 @@ import (
 
 func TestFS(t *testing.T) {
 	const count = 1
-	fileSys := New(os.DirFS("../example"))
+	fileSys, err := New(os.DirFS("../example"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	var wg sync.WaitGroup
 	wg.Add(count)
 	for i := 0; i < count; i++ {
@@ -23,6 +27,7 @@ func TestFS(t *testing.T) {
 				}
 				if path == "" {
 					t.Error("Path is empty")
+					return nil
 				}
 				if d.Name() == ".git" {
 					return fs.SkipDir
@@ -33,6 +38,7 @@ func TestFS(t *testing.T) {
 					b, err := fs.ReadFile(fileSys, path)
 					if err != nil {
 						t.Errorf("Cannot read %q: %v", path, err)
+						return nil
 					}
 					if len(b) == 0 {
 						t.Errorf("File %q has no data", path)
@@ -46,6 +52,7 @@ func TestFS(t *testing.T) {
 				fi, err := fs.Stat(fileSys, path)
 				if err != nil {
 					t.Errorf("Cannot stat %q: %v", path, err)
+					return nil
 				}
 				if !strings.HasSuffix(path, fi.Name()) {
 					t.Errorf("%q should be part of %q", fi.Name(), path)

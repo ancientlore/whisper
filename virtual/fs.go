@@ -125,10 +125,16 @@ type FS struct {
 }
 
 // New returns a new FS that presents a virtual view of innerFS.
-func New(innerFS fs.FS) *FS {
-	return &FS{
+func New(innerFS fs.FS) (*FS, error) {
+	var vfs = FS{
 		fs: innerFS,
 	}
+	_, err := vfs.loadTemplates()
+	if err != nil {
+		return nil, err
+	}
+
+	return &vfs, nil
 }
 
 // Open opens the named file.
@@ -165,7 +171,19 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 				f, err2 := vfs.fs.Open(name + ext)
 				if err2 == nil {
 					// match found, so return a virtual file
-					return &virtualFile{File: f, name: name}, nil
+					if ext == ".md" {
+						pf, err := vfs.markdownPipe(name, f)
+						if err != nil {
+							return nil, err
+						}
+						return &virtualFile{File: pf, name: name}, nil
+					} else {
+						pf, err := vfs.imagePipe(name, f)
+						if err != nil {
+							return nil, err
+						}
+						return &virtualFile{File: pf, name: name}, nil
+					}
 				}
 			}
 		}
@@ -180,6 +198,11 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	// Directories need to be virtual so that we don't
 	// accidentally pick up the wrong ReadDir implementation.
 	if fi.IsDir() {
+		return &virtualFile{name: name, File: f}, nil
+	}
+	// The sitemap file, if present, needs to be handled as a virtual
+	// file to process the template.
+	if name == "sitemap.txt" {
 		return &virtualFile{name: name, File: f}, nil
 	}
 	return f, nil
