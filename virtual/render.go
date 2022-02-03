@@ -46,8 +46,6 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 
 	fm, r := extractFrontMatter(b)
 
-	md := template.HTML(blackfriday.Run(r, blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.Footnotes)))
-
 	var front FrontMatter
 	if len(fm) > 0 {
 		err = toml.Unmarshal(fm, &front)
@@ -56,7 +54,9 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 		}
 	}
 
-	// Check for redirect
+	md := template.HTML(blackfriday.Run(r, blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.Footnotes)))
+
+	// TODO: Check for redirect
 	/*
 		if front.Redirect != "" {
 			return
@@ -74,7 +74,7 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 		Content: md,
 	}
 
-	// Check date - don't render until date/time is passed
+	// TODO: Check date - don't render until date/time is passed
 	/*
 		if time.Now().Before(data.FrontMatter.Date) {
 			notFound(w, r)
@@ -122,7 +122,7 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 		},
 	}
 
-	// Check date - don't render until date/time is passed
+	// TODO: Check date - don't render until date/time is passed
 	/*
 		if time.Now().Before(data.FrontMatter.Date) {
 			notFound(w, r)
