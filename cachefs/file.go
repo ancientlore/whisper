@@ -92,8 +92,12 @@ func (f *file) ReadDir(n int) ([]fs.DirEntry, error) {
 	if !f.FI.IsDir() {
 		return nil, &fs.PathError{Op: "readdir", Path: f.FI.Name(), Err: fmt.Errorf("Not a directory: %w", fs.ErrInvalid)}
 	}
-	res := make([]fs.DirEntry, len(f.Dirs))
-	for i := range f.Dirs {
+	max := len(f.Dirs)
+	if n > 0 && n < max {
+		max = n
+	}
+	res := make([]fs.DirEntry, max)
+	for i := 0; i < max; i++ {
 		res[i] = f.Dirs[i]
 	}
 	return res, nil
