@@ -92,15 +92,28 @@ func (f *file) ReadDir(n int) ([]fs.DirEntry, error) {
 	if !f.FI.IsDir() {
 		return nil, &fs.PathError{Op: "readdir", Path: f.FI.Name(), Err: fmt.Errorf("Not a directory: %w", fs.ErrInvalid)}
 	}
-	max := len(f.Dirs)
-	if n > 0 && n < max {
+
+	if n <= 0 {
+		dest := make([]fs.DirEntry, len(f.Dirs))
+		for i := range f.Dirs {
+			dest[i] = f.Dirs[i]
+		}
+		return dest, nil
+	}
+
+	max := len(f.Dirs) - f.pos
+	if n < max {
 		max = n
 	}
-	res := make([]fs.DirEntry, max)
-	for i := 0; i < max; i++ {
-		res[i] = f.Dirs[i]
+	if max == 0 {
+		return nil, io.EOF
 	}
-	return res, nil
+	dest := make([]fs.DirEntry, max)
+	for i := f.pos; i < f.pos+max; i++ {
+		dest[i-f.pos] = f.Dirs[i]
+	}
+	f.pos += max
+	return dest, nil
 }
 
 // dirEntry is a special version of fileInfo to represent directory entries.
