@@ -1,7 +1,7 @@
 package virtual
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"html/template"
 	"io"
@@ -13,33 +13,35 @@ import (
 	"github.com/russross/blackfriday/v2"
 )
 
-// pipeFile is a file with an adjusted reader.
-type pipeFile struct {
-	fs.File               // Underling file
-	reader  io.ReadCloser // Main ReadCloser to use
-}
+// renderFile is a specialization of virtualFile for customer rendering.
+type renderFile struct {
+	virtualFile
 
-// Stat returns information about the file.
-func (f pipeFile) Stat() (fs.FileInfo, error) {
-	return f.File.Stat()
+	reader io.ReadSeeker // Main Reader to use
 }
 
 // Read reads up to len(b) bytes from the File. It returns the number of bytes read
 // and any error encountered. At end of file, Read returns 0, io.EOF.
-func (f *pipeFile) Read(b []byte) (int, error) {
+func (f *renderFile) Read(b []byte) (int, error) {
 	return f.reader.Read(b)
 }
 
-// Close closes the file. Cached files are in memory, so this function does nothing.
-func (f *pipeFile) Close() error {
-	f.reader.Close()
-	return f.File.Close()
+// Seek sets the offset for the next Read or Write to offset, interpreted according
+// to whence: io.SeekStart means relative to the start of the file, io.SeekCurrent
+// means relative to the current offset, and io.SeekEnd means relative to the end.
+// Seek returns the new offset relative to the start of the file and an error, if any.
+//
+// Seeking to an offset before the start of the file is an error. Seeking to any
+// positive offset is legal, but the behavior of subsequent I/O operations on the
+// underlying object is implementation-dependent.
+func (f *renderFile) Seek(offset int64, whence int) (int64, error) {
+	return f.reader.Seek(offset, whence)
 }
 
-func (vfs *FS) markdownPipe(pathname string, f fs.File) (fs.File, error) {
+func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 	b, err := io.ReadAll(f)
 	if err != nil {
-		return nil, fmt.Errorf("markdownPipe: %w", err)
+		return nil, fmt.Errorf("newMarkdownFile: %w", err)
 	}
 
 	fm, r := extractFrontMatter(b)
@@ -50,7 +52,7 @@ func (vfs *FS) markdownPipe(pathname string, f fs.File) (fs.File, error) {
 	if len(fm) > 0 {
 		err = toml.Unmarshal(fm, &front)
 		if err != nil {
-			return nil, fmt.Errorf("markdownPipe: %w", err)
+			return nil, fmt.Errorf("newMarkdownFile: %w", err)
 		}
 	}
 
@@ -86,19 +88,22 @@ func (vfs *FS) markdownPipe(pathname string, f fs.File) (fs.File, error) {
 		templateName = data.FrontMatter.Template
 	}
 	tpl := vfs.getTemplates()
-	rdr, wtr := io.Pipe()
-	go func() {
-		defer wtr.Close()
-		err := tpl.ExecuteTemplate(wtr, templateName, data)
-		if err != nil && !errors.Is(err, io.ErrClosedPipe) {
-			log.Printf("Error executing template: %s", err)
-		}
-	}()
+	var wtr bytes.Buffer
+	err = tpl.ExecuteTemplate(&wtr, templateName, data)
+	if err != nil {
+		log.Printf("Error executing template: %s", err)
+	}
 
-	return &pipeFile{File: f, reader: rdr}, nil
+	return &renderFile{
+		virtualFile: virtualFile{
+			File: f,
+			name: bn,
+		},
+		reader: bytes.NewReader(wtr.Bytes()),
+	}, nil
 }
 
-func (vfs *FS) imagePipe(pathname string, f fs.File) (fs.File, error) {
+func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 	fi, err := f.Stat()
 	if err != nil {
 		return nil, err
@@ -127,14 +132,31 @@ func (vfs *FS) imagePipe(pathname string, f fs.File) (fs.File, error) {
 
 	// Render the HTML template
 	tpl := vfs.getTemplates()
-	rdr, wtr := io.Pipe()
-	go func() {
-		defer wtr.Close()
-		err := tpl.ExecuteTemplate(wtr, "image", data)
-		if err != nil && !errors.Is(err, io.ErrClosedPipe) {
-			log.Printf("Error executing template: %s", err)
-		}
-	}()
+	var wtr bytes.Buffer
+	err = tpl.ExecuteTemplate(&wtr, "image", data)
+	if err != nil {
+		log.Printf("Error executing template: %s", err)
+	}
 
-	return &pipeFile{File: f, reader: rdr}, nil
+	return &renderFile{
+		virtualFile: virtualFile{
+			File: f,
+			name: bn,
+		},
+		reader: bytes.NewReader(wtr.Bytes()),
+	}, nil
+}
+
+func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
+	_, bn := path.Split(pathname)
+	var wtr bytes.Buffer
+	// TODO: implement
+	wtr.WriteString("sitemap.txt")
+	return &renderFile{
+		virtualFile: virtualFile{
+			File: f,
+			name: bn,
+		},
+		reader: bytes.NewReader(wtr.Bytes()),
+	}, nil
 }

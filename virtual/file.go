@@ -35,6 +35,13 @@ func (f *virtualFile) Close() error {
 	return f.File.Close()
 }
 
+// virtualDir specializes virtualFile with the ReadDir method.
+type virtualDir struct {
+	virtualFile
+
+	path string // directory path
+}
+
 // ReadDir reads the contents of the directory and returns
 // a slice of up to n DirEntry values in directory order.
 // Subsequent calls on the same file will yield further DirEntry values.
@@ -49,13 +56,13 @@ func (f *virtualFile) Close() error {
 // to the end of the directory), it returns the slice and a nil error.
 // If it encounters an error before the end of the directory,
 // ReadDir returns the DirEntry list read until that point and a non-nil error.
-func (f *virtualFile) ReadDir(n int) ([]fs.DirEntry, error) {
+func (f *virtualDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	rdf, ok := f.File.(fs.ReadDirFile)
 	if !ok {
 		return nil, &fs.PathError{Op: "readdir", Err: fmt.Errorf("Not a directory: %w", fs.ErrInvalid)}
 	}
 
-	// todo: need to honor the value of n
+	// TODO: need to honor the value of n
 	entries, err := rdf.ReadDir(0)
 	if err != nil {
 		return nil, err
@@ -83,7 +90,7 @@ func (f *virtualFile) ReadDir(n int) ([]fs.DirEntry, error) {
 				vEntries = append(vEntries, virtualDirEntry{virtualFileInfo: virtualFileInfo{name: newNm, FileInfo: info}})
 				added[newNm] = true
 			}
-		case hasImageExtension(nm): // TODO: Need to honor && hasImageFolderPrefix(name):
+		case hasImageExtension(nm) && hasImageFolderPrefix(f.path):
 			info, err := entry.Info()
 			if err != nil {
 				return nil, err

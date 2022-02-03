@@ -37,10 +37,12 @@ func TestFS(t *testing.T) {
 				if !d.IsDir() {
 					b, err := fs.ReadFile(fileSys, path)
 					if err != nil {
-						t.Errorf("Cannot read %q: %v", path, err)
+						if path != "articles/badFrontMatter" {
+							t.Errorf("Cannot read %q: %v", path, err)
+						}
 						return nil
 					}
-					if len(b) == 0 {
+					if len(b) == 0 && path != "err" {
 						t.Errorf("File %q has no data", path)
 					}
 				} else {
@@ -51,7 +53,9 @@ func TestFS(t *testing.T) {
 				}
 				fi, err := fs.Stat(fileSys, path)
 				if err != nil {
-					t.Errorf("Cannot stat %q: %v", path, err)
+					if path != "articles/badFrontMatter" {
+						t.Errorf("Cannot stat %q: %v", path, err)
+					}
 					return nil
 				}
 				if !strings.HasSuffix(path, fi.Name()) {

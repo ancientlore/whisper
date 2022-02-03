@@ -1,6 +1,8 @@
 package virtual
 
-import "strings"
+import (
+	"strings"
+)
 
 var hiddenFiles = []string{
 	"template",
@@ -35,7 +37,7 @@ func containsSpecialFile(name string) bool {
 func hasImageFolderPrefix(s string) bool {
 	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
 	for _, f := range imageFolders {
-		if strings.HasPrefix(s, f+"/") {
+		if strings.HasPrefix(s, f) {
 			return true
 		}
 	}

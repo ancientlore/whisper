@@ -171,17 +171,9 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 				if err2 == nil {
 					// match found, so return a virtual file
 					if ext == ".md" {
-						pf, err := vfs.markdownPipe(name, f)
-						if err != nil {
-							return nil, err
-						}
-						return &virtualFile{File: pf, name: name}, nil
+						return vfs.newMarkdownFile(f, name)
 					} else {
-						pf, err := vfs.imagePipe(name, f)
-						if err != nil {
-							return nil, err
-						}
-						return &virtualFile{File: pf, name: name}, nil
+						return vfs.newImageFile(f, name)
 					}
 				}
 			}
@@ -197,12 +189,12 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	// Directories need to be virtual so that we don't
 	// accidentally pick up the wrong ReadDir implementation.
 	if fi.IsDir() {
-		return &virtualFile{name: name, File: f}, nil
+		return &virtualDir{virtualFile: virtualFile{name: name, File: f}, path: name}, nil
 	}
 	// The sitemap file, if present, needs to be handled as a virtual
 	// file to process the template.
 	if name == "sitemap.txt" {
-		return &virtualFile{name: name, File: f}, nil
+		return vfs.newSitemapFile(f, name)
 	}
 	return f, nil
 }
