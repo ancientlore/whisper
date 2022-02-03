@@ -14,6 +14,7 @@ import (
 
 func main() {
 	folder := flag.String("folder", "../../example", "Base folder")
+	addr := flag.String("addr", ":9000", "Server address")
 
 	flag.Parse()
 
@@ -27,7 +28,7 @@ func main() {
 	}
 
 	// Create the cached file system with group name "groupName", a 10MB cache, and a ten second expiration
-	cachedFileSystem := cachefs.New(fs, "simple", 10*1024*1024, 10*time.Second)
+	cachedFileSystem := cachefs.New(fs, &cachefs.Config{GroupName: "simple", SizeInBytes: 10 * 1024 * 1024, Duration: 10 * time.Second})
 
-	http.ListenAndServe(":9000", http.FileServer(http.FS(cachedFileSystem)))
+	http.ListenAndServe(*addr, http.FileServer(http.FS(cachedFileSystem)))
 }

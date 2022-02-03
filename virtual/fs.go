@@ -112,7 +112,6 @@ import (
 	"errors"
 	"html/template"
 	"io/fs"
-	"strings"
 	"sync"
 )
 
@@ -208,6 +207,7 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	return f, nil
 }
 
+/*
 // ReadDir reads the named directory
 // and returns a list of directory entries sorted by filename.
 func (vfs *FS) ReadDir(name string) ([]fs.DirEntry, error) {
@@ -262,3 +262,4 @@ func (vfs *FS) ReadDir(name string) ([]fs.DirEntry, error) {
 	}
 	return vEntries, nil
 }
+*/
