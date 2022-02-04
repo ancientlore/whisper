@@ -7,7 +7,6 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"time"
 )
 
 // File holds data about a page endpoint.
@@ -165,9 +164,13 @@ func (vfs *FS) readDir(folderpath string) ([]File, error) {
 					log.Printf("readDir: %s", err)
 				}
 			}
-			if itm.FrontMatter.Date.Before(time.Now()) {
-				r = append(r, itm)
-			}
+			// TODO: check date
+			/*
+				if itm.FrontMatter.Date.Before(time.Now()) {
+					r = append(r, itm)
+				}
+			*/
+			r = append(r, itm)
 		}
 	}
 	return r, nil

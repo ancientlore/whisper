@@ -189,7 +189,7 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	// Directories need to be virtual so that we don't
 	// accidentally pick up the wrong ReadDir implementation.
 	if fi.IsDir() {
-		return &virtualDir{virtualFile: virtualFile{name: name, File: f}, path: name}, nil
+		return &virtualDir{virtualFile: virtualFile{name: fi.Name(), File: f}, path: name}, nil
 	}
 	// The sitemap file, if present, needs to be handled as a virtual
 	// file to process the template.
