@@ -18,15 +18,16 @@ type renderFile struct {
 	virtualFile
 
 	reader io.ReadSeeker // Main Reader to use
-	length int64
+	size   int64         // Length of data
 }
 
+// Stat returns a FileInfo describing the file.
 func (f *renderFile) Stat() (fs.FileInfo, error) {
 	fi, err := f.virtualFile.Stat()
 	if err != nil {
 		return nil, err
 	}
-	return renderFileInfo{FileInfo: fi, size: f.length}, nil
+	return renderFileInfo{FileInfo: fi, size: f.size}, nil
 }
 
 // Read reads up to len(b) bytes from the File. It returns the number of bytes read
@@ -47,16 +48,23 @@ func (f *renderFile) Seek(offset int64, whence int) (int64, error) {
 	return f.reader.Seek(offset, whence)
 }
 
+// renderFileInfo holds the metadata about the file and allows you
+// to customize the size, which is important for reporting the
+// length of the rendered data.
 type renderFileInfo struct {
 	fs.FileInfo
 
-	size int64
+	size int64 // Size of file data
 }
 
+// Size reports the length of the file.
 func (rfi renderFileInfo) Size() int64 {
 	return rfi.size
 }
 
+// newMarkdownFile reads the underlying markdown file, extracts the front matter,
+// renders the markdown, and executes the specified template, returning the
+// resulting renderFile.
 func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 	b, err := io.ReadAll(f)
 	if err != nil {
@@ -119,10 +127,13 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 			name: bn,
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
-		length: int64(wtr.Len()),
+		size:   int64(wtr.Len()),
 	}, nil
 }
 
+// newImageFile reads the underlying image file, creates front matter,
+// and executes the specified template, returning the resulting
+// renderFile.
 func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 	fi, err := f.Stat()
 	if err != nil {
@@ -164,10 +175,13 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 			name: bn,
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
-		length: int64(wtr.Len()),
+		size:   int64(wtr.Len()),
 	}, nil
 }
 
+// newSitemapFile parses the underlying text file as a template, reads the
+// directory listing, and executes the template, returning the resulting
+// renderFile.
 func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 	_, bn := path.Split(pathname)
 	var wtr bytes.Buffer
@@ -179,6 +193,6 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 			name: bn,
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
-		length: int64(wtr.Len()),
+		size:   int64(wtr.Len()),
 	}, nil
 }

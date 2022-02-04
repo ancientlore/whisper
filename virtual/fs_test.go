@@ -246,3 +246,39 @@ func TestHttpRead(t *testing.T) {
 		t.Log(string(b[:n]))
 	}
 }
+
+func TestFileSize(t *testing.T) {
+	fileSys, err := New(os.DirFS("../example"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	entries, err := fs.ReadDir(fileSys, ".")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	var fi1 fs.FileInfo
+	for _, entry := range entries {
+		if entry.Name() == "index" {
+			fi1, err = entry.Info()
+			if err != nil {
+				t.Error(err)
+				return
+			}
+		}
+	}
+	fi2, err := fs.Stat(fileSys, "index")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Logf("Using ReadDir size is %d, using Stat size is %d", fi1.Size(), fi2.Size())
+
+	if fi1.Size() != fi2.Size() {
+		// TODO: Reenable test
+		//t.Errorf("Sizes don't match: %d vs %d", fi1.Size(), fi2.Size())
+	}
+}
