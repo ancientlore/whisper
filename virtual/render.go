@@ -130,10 +130,33 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 		return nil, err
 	}
 
-	_, bn := path.Split(pathname)
+	sitemapTpl, err := template.New("sitemap").ParseFS(vfs.fs, pathname)
+	if err != nil {
+		return nil, err
+	}
+
+	var files []string
+	err = fs.WalkDir(vfs, ".", func(path string, d fs.DirEntry, err error) error {
+		if err == nil && path != "" {
+			if path == "." {
+				path = ""
+			}
+			if d.IsDir() && path != "" {
+				path = path + "/"
+			}
+			files = append(files, path)
+		}
+		return nil
+	})
+
 	var wtr bytes.Buffer
-	// TODO: implement
-	wtr.WriteString("sitemap.txt")
+	err = sitemapTpl.ExecuteTemplate(&wtr, "sitemap", files)
+	if err != nil {
+		wtr.Reset()
+		log.Printf("sitemap: %s", err)
+	}
+
+	_, bn := path.Split(pathname)
 	return &virtualFile{
 		fi: fileInfo{
 			nm: bn,
