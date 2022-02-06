@@ -31,7 +31,7 @@ func (vfs *FS) dir(folderpath string) []File {
 		}
 		fi, err := entry.Info()
 		if err == nil {
-			fm.Date = fi.ModTime()
+			fm.Date = fi.ModTime().Local()
 		}
 		if !entry.IsDir() && path.Ext(entry.Name()) == "" {
 			err = vfs.readFrontMatter(path.Join(folderpath, entry.Name()+".md"), &fm)

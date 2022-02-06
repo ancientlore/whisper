@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"path"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/russross/blackfriday/v2"
@@ -30,6 +31,9 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 	fm, r := extractFrontMatter(b)
 
 	var front FrontMatter
+	front.Date = fi.ModTime().Local()
+	front.Template = "default"
+	front.Title = strings.TrimSuffix(fi.Name(), path.Ext(fi.Name()))
 	if len(fm) > 0 {
 		err = toml.Unmarshal(fm, &front)
 		if err != nil {
@@ -93,8 +97,9 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 	p, bn := path.Split(pathname)
 	var data = data{
 		FrontMatter: FrontMatter{
-			Title: bn,
-			Date:  fi.ModTime(),
+			Title:    strings.TrimSuffix(fi.Name(), path.Ext(fi.Name())),
+			Date:     fi.ModTime().Local(),
+			Template: "image",
 		},
 		Page: PageInfo{
 			Path:     "/" + p,
