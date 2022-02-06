@@ -5,13 +5,32 @@
 		<title>{{.FrontMatter.Title}}</title>
 	</head>
 	<body>
-		{{.Content}}
-		<hr/>
-		<ul>{{ $p := .Page.Path}}{{range sortbyname (dir .Page.Path)}}
-			<li><a href="{{join $p .Filename}}">{{if eq ".md" (ext .Filename)}}{{.FrontMatter.Title}}{{else}}{{.Filename}}{{end}}</a> {{.FrontMatter.Date.String}}</li>
-		{{end}}</ul>
-		<hr/>
-		<a href="/">Home</a>
+		<table>
+			<tr>
+				<td style="vertical-align: top">
+					<h3>{{.FrontMatter.Title}}</h3>
+					<p>
+						{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}<br/>
+						{{range .FrontMatter.Tags}}{{.}} {{end}}<br/>
+						({{if .FrontMatter.Template}}{{.FrontMatter.Template}}{{else}}default{{end}})
+					</p>
+					<p>
+						<a href="/">Home</a>
+					</p>
+					<p>
+						<ul>{{ $p := .Page.Path}}{{range sortbyname (dir .Page.Path)}}
+							<li>
+								<a href="{{join $p .Filename}}">{{if eq ".md" (ext .Filename)}}{{.FrontMatter.Title}}{{else}}{{.Filename}}{{end}}</a><br/>
+								{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}
+							</li>
+						{{end}}</ul>
+					</p>
+				</td>
+				<td style="vertical-align: top; padding-left: 16px;">
+					{{.Content}}
+				</td>
+			</tr>
+		</table>
 	</body>
 </html>
 {{end}}{{define "image"}}<!DOCTYPE html>
@@ -20,17 +39,35 @@
 		<meta charset="utf-8">
 		<title>{{.FrontMatter.Title}}</title>
 	</head>
-	<body>		
-		{{.Content}}
-		<hr/>
-		<h3>{{.FrontMatter.Title}}</h1>
-		<img src="{{join .Page.Path .Page.Filename}}" alt="{{.FrontMatter.Title}}"/>
-		<hr/>
-		<ul>{{ $p := .Page.Path}}{{range sortbyname (dir .Page.Path)}}
-			<li><a href="{{join $p .Filename}}">{{if eq ".md" (ext .Filename)}}{{.FrontMatter.Title}}{{else}}{{.Filename}}{{end}}</a> {{.FrontMatter.Date.String}}</li>
-		{{end}}</ul>
-		<hr/>
-		<a href="/">Home</a>
+	<body>
+		<table>
+			<tr>
+				<td style="vertical-align: top">
+					<h3>{{.FrontMatter.Title}}</h3>
+					<p>
+						{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}<br/>
+						{{range .FrontMatter.Tags}}{{.}} {{end}}<br/>
+						({{if .FrontMatter.Template}}{{.FrontMatter.Template}}{{else}}default{{end}})
+					</p>
+					<p>
+						<a href="/">Home</a>
+					</p>
+					<p>
+						<ul>{{ $p := .Page.Path}}{{range sortbyname (dir .Page.Path)}}
+							<li>
+								<a href="{{join $p .Filename}}">{{if eq ".md" (ext .Filename)}}{{.FrontMatter.Title}}{{else}}{{.Filename}}{{end}}</a><br/>
+								{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}
+							</li>
+						{{end}}</ul>
+					</p>
+				</td>
+				<td style="vertical-align: top; padding-left: 16px;">
+					{{.Content}}
+					<h3>{{.FrontMatter.Title}}</h3>
+					<img src="{{join .Page.Path .Page.Filename}}" alt="{{.FrontMatter.Title}}"/>
+				</td>
+			</tr>
+		</table>
 	</body>
 </html>
 {{end}}
