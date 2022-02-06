@@ -170,6 +170,7 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 				f, err2 := vfs.fs.Open(name + ext)
 				if err2 == nil {
 					// match found, so return a virtual file
+					defer f.Close()
 					if ext == ".md" {
 						return vfs.newMarkdownFile(f, name)
 					} else {
@@ -189,11 +190,13 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	// Directories need to be virtual so that we don't
 	// accidentally pick up the wrong ReadDir implementation.
 	if fi.IsDir() {
-		return &virtualDir{virtualFile: virtualFile{name: fi.Name(), File: f}, path: name}, nil
+		// don't close f because it will be used for ReadDir
+		return &virtualDir{File: f, path: name}, nil
 	}
 	// The sitemap file, if present, needs to be handled as a virtual
 	// file to process the template.
 	if name == "sitemap.txt" {
+		defer f.Close()
 		return vfs.newSitemapFile(f, name)
 	}
 	return f, nil
