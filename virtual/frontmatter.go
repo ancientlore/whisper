@@ -16,7 +16,6 @@ type FrontMatter struct {
 	Date     time.Time `toml:"date"`     // Date the article appears
 	Template string    `toml:"template"` // The name of the template to use
 	Tags     []string  `toml:"tags"`     // Tags to assign to this article
-	Expires  Duration  `toml:"expires"`  // Use for pages that need an Expires header
 	Redirect string    `toml:"redirect"` // Issue a redirect to another location
 }
 
