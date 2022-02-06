@@ -51,19 +51,11 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 	var data = data{
 		FrontMatter: front,
 		Page: PageInfo{
-			Path:     p,
+			Path:     "/" + p,
 			Filename: bn,
 		},
 		Content: md,
 	}
-
-	// TODO: Check date - don't render until date/time is passed
-	/*
-		if time.Now().Before(data.FrontMatter.Date) {
-			notFound(w, r)
-			return
-		}
-	*/
 
 	// Render the HTML template
 	templateName := "default"
@@ -105,18 +97,10 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 			Date:  fi.ModTime(),
 		},
 		Page: PageInfo{
-			Path:     p,
+			Path:     "/" + p,
 			Filename: fi.Name(),
 		},
 	}
-
-	// TODO: Check date - don't render until date/time is passed
-	/*
-		if time.Now().Before(data.FrontMatter.Date) {
-			notFound(w, r)
-			return
-		}
-	*/
 
 	// Render the HTML template
 	tpl := vfs.getTemplates()

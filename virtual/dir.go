@@ -1,7 +1,7 @@
 package virtual
 
 import (
-	"fmt"
+	"errors"
 	"io/fs"
 	"log"
 	"path"
@@ -15,61 +15,40 @@ type File struct {
 	Filename    string
 }
 
-// filesByTime is a sorted list of files.
-type filesByTime []File
-
-// Len is part of sort.Interface.
-func (f filesByTime) Len() int {
-	return len(f)
-}
-
-// Swap is part of sort.Interface.
-func (f filesByTime) Swap(i, j int) {
-	f[i], f[j] = f[j], f[i]
-}
-
-// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (f filesByTime) Less(i, j int) bool {
-	return !f[i].FrontMatter.Date.Before(f[j].FrontMatter.Date)
-}
-
-// filesByName enabled sorting by file name.
-type filesByName []File
-
-// Len is part of sort.Interface.
-func (f filesByName) Len() int {
-	return len(f)
-}
-
-// Swap is part of sort.Interface.
-func (f filesByName) Swap(i, j int) {
-	f[i], f[j] = f[j], f[i]
-}
-
-// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (f filesByName) Less(i, j int) bool {
-	return strings.Compare(f[i].Filename, f[j].Filename) > 0
-}
-
 // dir returns a sorted slice of files and is used in templates.
 func (vfs *FS) dir(folderpath string) []File {
-	f, err := vfs.readDir(folderpath)
+	folderpath = "./" + strings.TrimPrefix(folderpath, "/")
+	folderpath = path.Clean(folderpath)
+	entries, err := fs.ReadDir(vfs, folderpath)
 	if err != nil {
 		log.Printf("dir: %s", err)
 		return nil
+	}
+	f := make([]File, 0, len(entries))
+	for _, entry := range entries {
+		fm := FrontMatter{
+			Title: strings.TrimSuffix(entry.Name(), path.Ext(entry.Name())),
+		}
+		if !entry.IsDir() && path.Ext(entry.Name()) == "" {
+			err = vfs.readFrontMatter(path.Join(folderpath, entry.Name()+".md"), &fm)
+			if err != nil && !errors.Is(err, fs.ErrNotExist) {
+				log.Printf("readDir: %s", err)
+			}
+		}
+		f = append(f, File{FrontMatter: fm, Filename: entry.Name()})
 	}
 	return f
 }
 
 // sortByName sorts the files by the time in reverse order
 func sortByTime(f []File) []File {
-	sort.Sort(filesByTime(f))
+	sort.Slice(f, func(i, j int) bool { return f[i].FrontMatter.Date.Before(f[j].FrontMatter.Date) })
 	return f
 }
 
 // sortByName sorts the files by the time in reverse order
 func sortByName(f []File) []File {
-	sort.Sort(filesByName(f))
+	sort.Slice(f, func(i, j int) bool { return f[i].Filename < f[j].Filename })
 	return f
 }
 
@@ -132,46 +111,4 @@ func prev(f []File, current string) *File {
 		}
 	}
 	return nil
-}
-
-// readDir returns a sorted slice of files.
-func (vfs *FS) readDir(folderpath string) ([]File, error) {
-	folderpath = "./" + strings.TrimPrefix(folderpath, "/")
-	folderpath = path.Clean(folderpath)
-	f, err := vfs.fs.Open(folderpath)
-	if err != nil {
-		return nil, fmt.Errorf("readDir: %w", err)
-	}
-	defer f.Close()
-	arr, err := f.(fs.ReadDirFile).ReadDir(-1)
-	if err != nil {
-		return nil, fmt.Errorf("readDir: %w", err)
-	}
-	var r []File
-	for _, fi := range arr {
-		if !fi.IsDir() && !containsSpecialFile(fi.Name()) && fi.Name() != "index.md" && !isHiddenFile(fi.Name()) {
-			itm := File{
-				Filename: fi.Name(),
-				FrontMatter: FrontMatter{
-					Title: strings.TrimSuffix(fi.Name(), path.Ext(fi.Name())),
-				},
-			}
-			if strings.HasSuffix(itm.Filename, ".md") {
-				itm.Filename = strings.TrimSuffix(itm.Filename, ".md")
-				itm.FrontMatter.Title = strings.TrimSuffix(itm.FrontMatter.Title, ".md")
-				err = vfs.readFrontMatter(path.Join(folderpath, fi.Name()), &itm.FrontMatter)
-				if err != nil {
-					log.Printf("readDir: %s", err)
-				}
-			}
-			// TODO: check date
-			/*
-				if itm.FrontMatter.Date.Before(time.Now()) {
-					r = append(r, itm)
-				}
-			*/
-			r = append(r, itm)
-		}
-	}
-	return r, nil
 }
