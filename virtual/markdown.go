@@ -37,12 +37,10 @@ func (vfs *FS) renderMarkdown(filename string) (*FrontMatter, template.HTML, tim
 		modTime time.Time
 	)
 	filename = pathToMarkdown(filename)
-	log.Printf("renderMarkdown: Stat: %q", filename)
 	s, err := fs.Stat(vfs.fs, filename)
 	if err != nil {
 		return nil, "", modTime, fmt.Errorf("renderMarkdown: %w", err)
 	}
-	log.Printf("renderMarkdown: ReadFile: %q", filename)
 	b, err := fs.ReadFile(vfs.fs, filename)
 	if err != nil {
 		return nil, "", modTime, fmt.Errorf("renderMarkdown: %w", err)
