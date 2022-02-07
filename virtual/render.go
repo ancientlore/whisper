@@ -144,7 +144,7 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 			if d.IsDir() && path != "" {
 				path = path + "/"
 			}
-			if d.Name() != "index.html" {
+			if d.Name() != "index.html" && d.Name() != "404.html" && d.Name() != "500.html" {
 				files = append(files, path)
 			}
 		}

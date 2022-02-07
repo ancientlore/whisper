@@ -26,7 +26,7 @@ func (vfs *FS) dir(folderpath string) []File {
 	}
 	f := make([]File, 0, len(entries))
 	for _, entry := range entries {
-		if entry.Name() != "index.html" {
+		if entry.Name() != "index.html" && entry.Name() != "404.html" && entry.Name() != "500.html" {
 			fm := FrontMatter{
 				Title: strings.TrimSuffix(entry.Name(), path.Ext(entry.Name())),
 			}

@@ -33,7 +33,7 @@ Site Map
 
 If a file in the root names "sitemap.txt" is present, it will be run as template that can list the files
 of the site map. This allows you to customize what your site map looks like. The site map receives only
-the list of file names.
+the list of file names as a slice of strings.
 
 Front Matter
 
@@ -49,19 +49,19 @@ the start and end. For example:
 
 Front matter may include:
 
-	Name       Type               Description
-	---------  -----------------  -----------------------------------------
-	title      string             Title of page
-	date       time               Publish date
-	tags       array of strings   Tags for the articles (not used yet)
-	template   string             Override the template to render this file
-	redirect   string             You can use this to issue an HTML meta-tag redirect
+	Name       Type                  Description
+	---------  -----------------     -----------------------------------------
+	title         string             Title of page
+	date          time               Publish date
+	tags          array of strings   Tags for the articles (not used yet)
+	template      string             Override the template to render this file
+	redirect      string             You can use this to issue an HTML meta-tag redirect
+	originalfile  string             The original filename (markdown or image)
 
 Templates
 
 The system uses standard Go templates from the `html/template` package, and includes two default templates,
-"default" and "image". Optionally, you can have a "notfound" template to handle 404s and an "error" template
-to handle 500s. Templates are stored in the "template" top-level folder with the extension ".html".
+"default" and "image". Templates are stored in the "template" top-level folder with the extension ".html".
 
 Templates are passed page information (virtual.PageInfo), front matter (virtual.FrontMatter), and rendered HTML from
 Markdown (template.HTML), and can use these data elements in their processing. Template also make
@@ -105,6 +105,14 @@ Index Files
 Most web servers will want to provide an "index.html" file to handle folder roots (like "/articles"). This is
 handled automatically when using things like http.FileServer if you simply create an "index.md" file to
 render the "index.html" in the folder.
+
+Errors
+
+To assist web implementations that want to serve a custom file for 404 or 500 errors, you can create
+a 404.md and 500.md files in the root of the file system. Although the file system will expose these
+files through the normal "fs" package operations, the sitemap and "dir" template function will not
+show them, making it straightforward to design your site. The web implementation can request 404.html
+or 500.html to be served when the file system returns an error or fs.ErrNotExist.
 */
 package virtual
 
