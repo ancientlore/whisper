@@ -25,12 +25,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
@@ -78,9 +76,6 @@ func (cfs *cacheFS) Open(name string) (fs.File, error) {
 	ctx := context.Background()
 	err := cfs.cache.Get(ctx, q.Encode(), groupcache.ByteViewSink(&buf))
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
-		}
 		return nil, &fs.PathError{Op: "open", Path: name, Err: err}
 	}
 	decoder := gob.NewDecoder(buf.Reader())
