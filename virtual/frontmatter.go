@@ -12,11 +12,12 @@ import (
 
 // FrontMatter holds data scraped from a Markdown page.
 type FrontMatter struct {
-	Title    string    `toml:"title"`    // Title of this page
-	Date     time.Time `toml:"date"`     // Date the article appears
-	Template string    `toml:"template"` // The name of the template to use
-	Tags     []string  `toml:"tags"`     // Tags to assign to this article
-	Redirect string    `toml:"redirect"` // Issue a redirect to another location
+	Title        string    `toml:"title"`        // Title of this page
+	Date         time.Time `toml:"date"`         // Date the article appears
+	Template     string    `toml:"template"`     // The name of the template to use
+	Tags         []string  `toml:"tags"`         // Tags to assign to this article
+	Redirect     string    `toml:"redirect"`     // Issue a redirect to another location
+	OriginalFile string    `toml:"originalfile"` // The original file (markdown or image)
 }
 
 // fmRegexp is the regular expression used to split out front matter.

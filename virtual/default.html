@@ -10,9 +10,11 @@
 				<td style="vertical-align: top">
 					<h3>{{.FrontMatter.Title}}</h3>
 					<p>
+						{{ join .Page.Path .Page.Filename}}<br/>
 						{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}<br/>
 						{{range .FrontMatter.Tags}}{{.}} {{end}}<br/>
-						({{if .FrontMatter.Template}}{{.FrontMatter.Template}}{{else}}default{{end}})
+						({{if .FrontMatter.Template}}{{.FrontMatter.Template}}{{else}}default{{end}})<br/>
+						{{.FrontMatter.OriginalFile}}
 					</p>
 					<p>
 						<a href="/">Home</a>
@@ -46,9 +48,11 @@
 				<td style="vertical-align: top">
 					<h3>{{.FrontMatter.Title}}</h3>
 					<p>
+						{{ join .Page.Path .Page.Filename}}<br/>
 						{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}<br/>
 						{{range .FrontMatter.Tags}}{{.}} {{end}}<br/>
-						({{if .FrontMatter.Template}}{{.FrontMatter.Template}}{{else}}default{{end}})
+						({{if .FrontMatter.Template}}{{.FrontMatter.Template}}{{else}}default{{end}})<br/>
+						{{.FrontMatter.OriginalFile}}
 					</p>
 					<p>
 						<a href="/">Home</a>

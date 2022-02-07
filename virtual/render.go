@@ -34,6 +34,7 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 	front.Date = fi.ModTime().Local()
 	front.Template = "default"
 	front.Title = strings.TrimSuffix(fi.Name(), path.Ext(fi.Name()))
+	front.OriginalFile = fi.Name()
 	if len(fm) > 0 {
 		err = toml.Unmarshal(fm, &front)
 		if err != nil {
@@ -90,13 +91,14 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 	p, bn := path.Split(pathname)
 	var data = data{
 		FrontMatter: FrontMatter{
-			Title:    strings.TrimSuffix(fi.Name(), path.Ext(fi.Name())),
-			Date:     fi.ModTime().Local(),
-			Template: "image",
+			Title:        strings.TrimSuffix(fi.Name(), path.Ext(fi.Name())),
+			Date:         fi.ModTime().Local(),
+			Template:     "image",
+			OriginalFile: fi.Name(), // allows reference to image in template
 		},
 		Page: PageInfo{
 			Path:     "/" + p,
-			Filename: fi.Name(), // allows reference to image in template
+			Filename: bn,
 		},
 	}
 

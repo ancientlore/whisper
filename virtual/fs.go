@@ -32,8 +32,8 @@ special image handling only happens when the top-level folder is one of the foll
 Site Map
 
 If a file in the root names "sitemap.txt" is present, it will be run as template that can list the files
-of the site map. This allows you to customize what your site map looks like. You can use the normal
-template functions in the site map.
+of the site map. This allows you to customize what your site map looks like. The site map receives only
+the list of file names.
 
 Front Matter
 
