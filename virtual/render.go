@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
@@ -167,5 +168,89 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 			mt: fi.ModTime(),
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
+	}, nil
+}
+
+func (vfs *FS) newDirectory(f fs.File, pathname string) (fs.File, error) {
+	rdf, ok := f.(fs.ReadDirFile)
+	if !ok {
+		return nil, &fs.PathError{Op: "open", Err: fmt.Errorf("Not a directory: %w", fs.ErrInvalid)}
+	}
+
+	fi, err := rdf.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := rdf.ReadDir(0)
+	if err != nil {
+		return nil, err
+	}
+	var vEntries []fs.DirEntry
+	if len(entries) > 0 {
+		vEntries = make([]fs.DirEntry, 0, len(entries))
+	}
+	added := make(map[string]bool)
+	for _, entry := range entries {
+		nm := entry.Name()
+		switch {
+		case containsSpecialFile(nm):
+			continue
+		case isHiddenFile(nm):
+			continue
+		case strings.HasSuffix(nm, ".md"):
+			info, err := entry.Info()
+			if err != nil {
+				return nil, err
+			}
+			// new version hides the markdown
+			newNm := strings.TrimSuffix(nm, ".md") + ".html"
+			if _, ok := added[newNm]; !ok {
+				// TODO: info doesn't have the right size because data will be transformed
+				vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: newNm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))
+				added[newNm] = true
+			}
+		case hasImageExtension(nm) && hasImageFolderPrefix(pathname):
+			info, err := entry.Info()
+			if err != nil {
+				return nil, err
+			}
+			a := strings.Split(nm, ".")
+			newNm := strings.TrimSuffix(nm, "."+a[len(a)-1]) + ".html"
+			if _, ok := added[newNm]; !ok {
+				// TODO: info doesn't have the right size because data will be transformed
+				vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: newNm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))
+				added[newNm] = true
+			}
+			vEntries = append(vEntries, entry)
+		case nm == "sitemap.txt":
+			info, err := entry.Info()
+			if err != nil {
+				return nil, err
+			}
+			// TODO: info doesn't have the right size because data will be transformed
+			vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: nm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))
+		default:
+			// Check name just in case of collisions
+			if _, ok := added[nm]; !ok {
+				vEntries = append(vEntries, entry)
+				added[nm] = true
+			}
+		}
+	}
+	// Sort by filename
+	sort.Slice(vEntries, func(i, j int) bool {
+		return vEntries[i].Name() < vEntries[j].Name()
+	})
+
+	return &virtualDir{
+		fi: fileInfo{
+			nm: fi.Name(),
+			sz: fi.Size(),
+			md: fi.Mode(),
+			mt: fi.ModTime(),
+		},
+		entries: vEntries,
+		pos:     0,
 	}, nil
 }

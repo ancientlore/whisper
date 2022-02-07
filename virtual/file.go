@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"sort"
-	"strings"
 	"time"
 )
 
@@ -45,9 +43,25 @@ func (f *virtualFile) Seek(offset int64, whence int) (int64, error) {
 
 // virtualDir specializes virtualFile with the ReadDir method.
 type virtualDir struct {
-	fs.File // Underling file
+	fi      fileInfo
+	entries []fs.DirEntry
+	pos     int
+}
 
-	path string // directory path (needed in ReadDir)
+// Stat returns information about the file.
+func (f virtualDir) Stat() (fs.FileInfo, error) {
+	return f.fi, nil
+}
+
+// Read reads up to len(b) bytes from the File. It returns the number of bytes read
+// and any error encountered. At end of file, Read returns 0, io.EOF.
+func (f *virtualDir) Read(b []byte) (int, error) {
+	return 0, io.EOF
+}
+
+// Close closes the file. Cached files are in memory, so this function does nothing.
+func (f *virtualDir) Close() error {
+	return nil
 }
 
 // ReadDir reads the contents of the directory and returns
@@ -65,73 +79,27 @@ type virtualDir struct {
 // If it encounters an error before the end of the directory,
 // ReadDir returns the DirEntry list read until that point and a non-nil error.
 func (f *virtualDir) ReadDir(n int) ([]fs.DirEntry, error) {
-	rdf, ok := f.File.(fs.ReadDirFile)
-	if !ok {
-		return nil, &fs.PathError{Op: "readdir", Err: fmt.Errorf("Not a directory: %w", fs.ErrInvalid)}
+	if !f.fi.IsDir() {
+		return nil, &fs.PathError{Op: "readdir", Path: f.fi.Name(), Err: fmt.Errorf("Not a directory: %w", fs.ErrInvalid)}
 	}
 
-	// TODO: need to honor the value of n
-	entries, err := rdf.ReadDir(0)
-	if err != nil {
-		return nil, err
+	if n <= 0 {
+		dest := make([]fs.DirEntry, len(f.entries))
+		copy(dest, f.entries)
+		return dest, nil
 	}
-	var vEntries []fs.DirEntry
-	if len(entries) > 0 {
-		vEntries = make([]fs.DirEntry, 0, len(entries))
+
+	max := len(f.entries) - f.pos
+	if n < max {
+		max = n
 	}
-	added := make(map[string]bool)
-	for _, entry := range entries {
-		nm := entry.Name()
-		switch {
-		case containsSpecialFile(nm):
-			continue
-		case isHiddenFile(nm):
-			continue
-		case strings.HasSuffix(nm, ".md"):
-			info, err := entry.Info()
-			if err != nil {
-				return nil, err
-			}
-			// new version hides the markdown
-			newNm := strings.TrimSuffix(nm, ".md") + ".html"
-			if _, ok := added[newNm]; !ok {
-				// TODO: info doesn't have the right size because data will be transformed
-				vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: newNm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))
-				added[newNm] = true
-			}
-		case hasImageExtension(nm) && hasImageFolderPrefix(f.path):
-			info, err := entry.Info()
-			if err != nil {
-				return nil, err
-			}
-			a := strings.Split(nm, ".")
-			newNm := strings.TrimSuffix(nm, "."+a[len(a)-1]) + ".html"
-			if _, ok := added[newNm]; !ok {
-				// TODO: info doesn't have the right size because data will be transformed
-				vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: newNm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))
-				added[newNm] = true
-			}
-			vEntries = append(vEntries, entry)
-		case nm == "sitemap.txt":
-			info, err := entry.Info()
-			if err != nil {
-				return nil, err
-			}
-			// TODO: info doesn't have the right size because data will be transformed
-			vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: nm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))
-		default:
-			// Check name just in case of collisions
-			if _, ok := added[nm]; !ok {
-				vEntries = append(vEntries, entry)
-				added[nm] = true
-			}
-		}
+	if max == 0 {
+		return nil, io.EOF
 	}
-	// Sort by filename
-	sort.Slice(vEntries, func(i, j int) bool {
-		return vEntries[i].Name() < vEntries[j].Name()
-	})
-	return vEntries, nil
+	dest := make([]fs.DirEntry, max)
+	copy(dest, f.entries[f.pos:])
+	f.pos += max
+	return dest, nil
 }
 
 // fileInfo holds the metadata about the file

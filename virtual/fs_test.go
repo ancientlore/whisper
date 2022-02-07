@@ -282,3 +282,54 @@ func TestFileSize(t *testing.T) {
 		//t.Errorf("Sizes don't match: %d vs %d", fi1.Size(), fi2.Size())
 	}
 }
+
+func TestReadDirLoop(t *testing.T) {
+	const count = 10
+	rootFS := os.DirFS(".")
+	fileSys, err := New(rootFS)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	f, err := fileSys.Open(".")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	rdf, ok := f.(fs.ReadDirFile)
+	if !ok {
+		t.Error("Root is not a ReadDirFile")
+		return
+	}
+
+	var dirs []fs.DirEntry
+	for {
+		dirs, err = rdf.ReadDir(2)
+		if errors.Is(err, io.EOF) {
+			if len(dirs) != 0 {
+				t.Errorf("Expected empty directory at EOF")
+			}
+			break
+		}
+		if err != nil {
+			t.Error(err)
+			break
+		}
+		if len(dirs) == 0 {
+			t.Errorf("Should not return empty directory if not EOF")
+			break
+		}
+		if len(dirs) > 2 {
+			t.Errorf("Returned more than 2 entries: %d", len(dirs))
+		}
+		t.Log(dirs)
+	}
+}

@@ -160,6 +160,7 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
+
 	// Don't show hidden or special files
 	if isHiddenFile(name) || (name != "." && containsSpecialFile(name)) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
@@ -193,6 +194,7 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 		// no matching underlying file; return error from opening the underlying file
 		return f, err
 	}
+
 	// check for directory
 	fi, err := f.Stat()
 	if err != nil {
@@ -202,14 +204,17 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	// Directories need to be virtual so that we don't
 	// accidentally pick up the wrong ReadDir implementation.
 	if fi.IsDir() {
-		// don't close f because it will be used for ReadDir
-		return &virtualDir{File: f, path: name}, nil
+		defer f.Close()
+		return vfs.newDirectory(f, name)
 	}
+
 	// The sitemap file, if present, needs to be handled as a virtual
 	// file to process the template.
 	if name == "sitemap.txt" {
 		defer f.Close()
 		return vfs.newSitemapFile(f, name)
 	}
+
+	// Return the unprocessed, regular file
 	return f, nil
 }
