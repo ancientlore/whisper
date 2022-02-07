@@ -16,7 +16,7 @@ import (
 
 // newMarkdownFile reads the underlying markdown file, extracts the front matter,
 // renders the markdown, and executes the specified template, returning the
-// resulting renderFile.
+// resulting virtualFile.
 func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 	fi, err := f.Stat()
 	if err != nil {
@@ -42,13 +42,6 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 	}
 
 	md := template.HTML(blackfriday.Run(r, blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.Footnotes)))
-
-	// TODO: Check for redirect
-	/*
-		if front.Redirect != "" {
-			return
-		}
-	*/
 
 	// prepare template data
 	p, bn := path.Split(pathname)
@@ -86,7 +79,7 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 
 // newImageFile reads the underlying image file, creates front matter,
 // and executes the specified template, returning the resulting
-// renderFile.
+// virtualFile.
 func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 	fi, err := f.Stat()
 	if err != nil {
@@ -103,7 +96,7 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 		},
 		Page: PageInfo{
 			Path:     "/" + p,
-			Filename: fi.Name(),
+			Filename: fi.Name(), // allows reference to image in template
 		},
 	}
 
@@ -128,7 +121,7 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 
 // newSitemapFile parses the underlying text file as a template, reads the
 // directory listing, and executes the template, returning the resulting
-// renderFile.
+// virtualFile.
 func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 	fi, err := f.Stat()
 	if err != nil {
@@ -149,7 +142,9 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 			if d.IsDir() && path != "" {
 				path = path + "/"
 			}
-			files = append(files, path)
+			if d.Name() != "index.html" {
+				files = append(files, path)
+			}
 		}
 		return nil
 	})

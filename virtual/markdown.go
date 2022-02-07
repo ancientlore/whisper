@@ -17,15 +17,13 @@ import (
 func pathToMarkdown(filename string) string {
 	// check for folder - if so, add index.md
 	if strings.HasSuffix(filename, "/") {
-		filename += "index.md"
+		filename += "index.html"
 	}
 	filename = path.Clean(filename)
 	// removing leading / so we find it on the file system
 	filename = strings.TrimPrefix(filename, "/")
 	// make sure the extension is present
-	if path.Ext(filename) == "" {
-		filename += ".md"
-	}
+	filename = strings.TrimSuffix(filename, path.Ext(filename)) + ".md"
 	return filename
 }
 

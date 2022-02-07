@@ -93,7 +93,7 @@ func (f *virtualDir) ReadDir(n int) ([]fs.DirEntry, error) {
 				return nil, err
 			}
 			// new version hides the markdown
-			newNm := strings.TrimSuffix(nm, ".md")
+			newNm := strings.TrimSuffix(nm, ".md") + ".html"
 			if _, ok := added[newNm]; !ok {
 				// TODO: info doesn't have the right size because data will be transformed
 				vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: newNm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))
@@ -105,7 +105,7 @@ func (f *virtualDir) ReadDir(n int) ([]fs.DirEntry, error) {
 				return nil, err
 			}
 			a := strings.Split(nm, ".")
-			newNm := strings.TrimSuffix(nm, "."+a[len(a)-1])
+			newNm := strings.TrimSuffix(nm, "."+a[len(a)-1]) + ".html"
 			if _, ok := added[newNm]; !ok {
 				// TODO: info doesn't have the right size because data will be transformed
 				vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: newNm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))

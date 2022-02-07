@@ -26,20 +26,22 @@ func (vfs *FS) dir(folderpath string) []File {
 	}
 	f := make([]File, 0, len(entries))
 	for _, entry := range entries {
-		fm := FrontMatter{
-			Title: strings.TrimSuffix(entry.Name(), path.Ext(entry.Name())),
-		}
-		fi, err := entry.Info()
-		if err == nil {
-			fm.Date = fi.ModTime().Local()
-		}
-		if !entry.IsDir() && path.Ext(entry.Name()) == "" {
-			err = vfs.readFrontMatter(path.Join(folderpath, entry.Name()+".md"), &fm)
-			if err != nil && !errors.Is(err, fs.ErrNotExist) {
-				log.Printf("readDir: %s", err)
+		if entry.Name() != "index.html" {
+			fm := FrontMatter{
+				Title: strings.TrimSuffix(entry.Name(), path.Ext(entry.Name())),
 			}
+			fi, err := entry.Info()
+			if err == nil {
+				fm.Date = fi.ModTime().Local()
+			}
+			if !entry.IsDir() && path.Ext(entry.Name()) == ".html" {
+				err = vfs.readFrontMatter(path.Join(folderpath, entry.Name()+".md"), &fm)
+				if err != nil && !errors.Is(err, fs.ErrNotExist) {
+					log.Printf("readDir: %s", err)
+				}
+			}
+			f = append(f, File{FrontMatter: fm, Filename: entry.Name()})
 		}
-		f = append(f, File{FrontMatter: fm, Filename: entry.Name()})
 	}
 	return f
 }

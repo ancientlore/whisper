@@ -23,7 +23,7 @@ Alice   | 23
 
 ### Another List
 
-* [About](/about)
+* [About](/about.html)
 * Second
 * Third
 

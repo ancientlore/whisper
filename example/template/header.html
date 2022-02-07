@@ -34,13 +34,13 @@
     {
       "@context": "http://schema.org",
       "@type": "Webpage",
-      "url": "http://dude.ancientlore.io/{{if ne .Filename "index"}}{{.Filename}}{{end}}",
+      "url": "http://dude.ancientlore.io/{{if ne .Filename "index.html"}}{{.Filename}}{{end}}",
       "name": "Dude",
       "headline": "Dude",
       "description": "Dude Example Site",
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": "http://dude.ancientlore.io/{{if ne .Filename "index"}}{{.Filename}}{{end}}"
+        "@id": "http://dude.ancientlore.io/{{if ne .Filename "index.html"}}{{.Filename}}{{end}}"
       },
       "publisher": {
         "@type": "Person",

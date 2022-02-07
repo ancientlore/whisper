@@ -41,12 +41,12 @@ func TestFS(t *testing.T) {
 				if !d.IsDir() {
 					b, err := fs.ReadFile(fileSys, path)
 					if err != nil {
-						if path != "articles/badFrontMatter" {
+						if path != "articles/badFrontMatter.html" {
 							t.Errorf("Cannot read %q: %v", path, err)
 						}
 						return nil
 					}
-					if len(b) == 0 && path != "err" {
+					if len(b) == 0 && path != "err.html" {
 						t.Errorf("File %q has no data", path)
 					}
 				} else {
@@ -57,7 +57,7 @@ func TestFS(t *testing.T) {
 				}
 				fi, err := fs.Stat(fileSys, path)
 				if err != nil {
-					if path != "articles/badFrontMatter" {
+					if path != "articles/badFrontMatter.html" {
 						t.Errorf("Cannot stat %q: %v", path, err)
 					}
 					return nil
@@ -67,7 +67,7 @@ func TestFS(t *testing.T) {
 				}
 				if !fi.IsDir() {
 					if fi.Size() == 0 {
-						if fi.Name() != "err" {
+						if fi.Name() != "err.html" {
 							t.Errorf("Expected %q to have non-zero size", path)
 						}
 					}
@@ -90,7 +90,7 @@ func TestReadFile(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	b, err := fs.ReadFile(fileSys, "index")
+	b, err := fs.ReadFile(fileSys, "index.html")
 	if err != nil {
 		t.Error(err)
 	}
@@ -123,7 +123,7 @@ func TestOpenRead(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	f, err := fileSys.Open("index")
+	f, err := fileSys.Open("index.html")
 	if err != nil {
 		t.Error(err)
 	}
@@ -225,7 +225,7 @@ func TestHttpRead(t *testing.T) {
 	}
 	hfs := http.FS(fileSys)
 
-	f, err := hfs.Open("/index")
+	f, err := hfs.Open("/index.html")
 	if err != nil {
 		t.Error(err)
 		return
@@ -261,7 +261,7 @@ func TestFileSize(t *testing.T) {
 	}
 	var fi1 fs.FileInfo
 	for _, entry := range entries {
-		if entry.Name() == "index" {
+		if entry.Name() == "index.html" {
 			fi1, err = entry.Info()
 			if err != nil {
 				t.Error(err)
@@ -269,7 +269,7 @@ func TestFileSize(t *testing.T) {
 			}
 		}
 	}
-	fi2, err := fs.Stat(fileSys, "index")
+	fi2, err := fs.Stat(fileSys, "index.html")
 	if err != nil {
 		t.Error(err)
 		return

@@ -16,14 +16,14 @@ If the above conditions are not met, then the file is provided as-is from the un
 
 Special File Handling
 
-When an endpoint like "/foo/bar" is called and it does not exist, the virtual file system first looks for
-a Markdown file named "/foo/bar.md". If present, a "virtual" file "/foo/bar" is presented that will
+When an endpoint like "/foo/bar.html" is called and it does not exist, the virtual file system first looks for
+a Markdown file named "/foo/bar.md". If present, a "virtual" file "/foo/bar.html" is presented that will
 render the underlying Markdown file into HTML. In this case, the underlying Markdowndown file,
 "/foo/bar.md", is hidden from view outside of the file system. By default, a template called "default"
 is used to render the Markdown, unless the front matter of the file specifies a different template.
 
 If a Markdown file is not found, the system will look for an image file (PNG, JPG, and GIF). If an image
-file is found, a virtual file "/foo/bar" is created that will render an HTML file using the "image" template.
+file is found, a virtual file "/foo/bar.html" is created that will render an HTML file using the "image" template.
 The underlying image file is not hidden, because it needs to be served for the HTML. Note that this
 special image handling only happens when the top-level folder is one of the following:
 
@@ -55,7 +55,7 @@ Front matter may include:
 	date       time               Publish date
 	tags       array of strings   Tags for the articles (not used yet)
 	template   string             Override the template to render this file
-	expires    duration           Set expiry for a specific page
+	redirect   string             You can use this to issue an HTML meta-tag redirect
 
 Templates
 
@@ -102,9 +102,9 @@ the following helper functions available:
 
 Index Files
 
-Most web servers will want to provided an "index.md" file to handle folder roots (like "/articles"). Unfortunately,
-making a directory both a directory and readable file might be confusing. For now index files will appear at
-"/articles/index", for example.
+Most web servers will want to provide an "index.html" file to handle folder roots (like "/articles"). This is
+handled automatically when using things like http.FileServer if you simply create an "index.md" file to
+render the "index.html" in the folder.
 */
 package virtual
 
@@ -112,6 +112,8 @@ import (
 	"errors"
 	"html/template"
 	"io/fs"
+	"path"
+	"strings"
 	"sync"
 )
 
@@ -159,22 +161,23 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	f, err := vfs.fs.Open(name)
 	if err != nil {
 		// for files that don't exist, check for underlying matching files
-		if errors.Is(err, fs.ErrNotExist) {
+		if errors.Is(err, fs.ErrNotExist) && path.Ext(name) == ".html" {
 			extensions := []string{".md", ".png", ".jpg", ".git", ".jpeg"}
 			// if it's not in an image folder, only check markdown files
 			if !hasImageFolderPrefix(name) {
 				extensions = extensions[:1]
 			}
+			newNm := strings.TrimSuffix(name, path.Ext(name))
 			// find file with matching extension
 			for _, ext := range extensions {
-				f, err2 := vfs.fs.Open(name + ext)
+				f, err2 := vfs.fs.Open(newNm + ext)
 				if err2 == nil {
 					// match found, so return a virtual file
 					defer f.Close()
 					if ext == ".md" {
-						return vfs.newMarkdownFile(f, name)
+						return vfs.newMarkdownFile(f, newNm+".html")
 					} else {
-						return vfs.newImageFile(f, name)
+						return vfs.newImageFile(f, newNm+".html")
 					}
 				}
 			}
@@ -185,6 +188,7 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	// check for directory
 	fi, err := f.Stat()
 	if err != nil {
+		f.Close()
 		return nil, err
 	}
 	// Directories need to be virtual so that we don't
