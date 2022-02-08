@@ -65,7 +65,6 @@ func main() {
 		log.Print(err)
 		os.Exit(3)
 	}
-	log.Print(cfg)
 
 	// Apply config overrides
 	if *fExpires != 0 {
@@ -83,6 +82,10 @@ func main() {
 	if cfg.CacheSize <= 0 {
 		cfg.CacheSize = 1 // need a default
 	}
+	log.Printf("Expires: %s", cfg.Expires.String())
+	log.Printf("Static Expires: %s", cfg.StaticExpires.String())
+	log.Printf("Cache Size: %dMB", cfg.CacheSize)
+	log.Printf("Cache Duration: %s", cfg.CacheDuration.String())
 
 	// Create the cached file system
 	cachedFileSystem := cachefs.New(virtualFileSystem, &cachefs.Config{GroupName: "whisper", SizeInBytes: int64(cfg.CacheSize) * 1024 * 1024, Duration: time.Duration(cfg.CacheDuration)})
@@ -113,6 +116,9 @@ func main() {
 		Handler:           handler,
 	}
 
+	// Start cache monitor
+	monc := stats("whisper")
+
 	// Create signal handler for graceful shutdown
 	go func() {
 		sigint := make(chan os.Signal, 1)
@@ -131,6 +137,7 @@ func main() {
 			// Error from closing listeners, or context timeout:
 			log.Printf("HTTP server Shutdown: %v", err)
 		}
+		close(monc)
 	}()
 
 	// Listen for requests
@@ -140,6 +147,30 @@ func main() {
 	} else {
 		log.Print("Goodbye.")
 	}
+}
+
+func stats(groupName string) chan<- bool {
+	c := make(chan bool)
+	g := groupcache.GetGroup(groupName)
+	if g != nil {
+		go func() {
+			t := time.NewTicker(5 * time.Minute)
+			for {
+				select {
+				case _, ok := <-c:
+					if !ok {
+						return
+					}
+				case <-t.C:
+					s := g.CacheStats(groupcache.HotCache)
+					log.Printf("Hot Cache  %#v", s)
+					s = g.CacheStats(groupcache.MainCache)
+					log.Printf("Main Cache %#v", s)
+				}
+			}
+		}()
+	}
+	return c
 }
 
 func waitForFiles(pathname string) error {
