@@ -31,10 +31,12 @@ func HeaderHandler(h http.Handler, headers map[string]string) http.Handler {
 func ExpiresHandler(h http.Handler, expires, staticExpires time.Duration) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		expiry := staticExpires
-		if strings.HasSuffix(r.URL.Path, "/") || strings.HasSuffix(r.URL.Path, ".html") {
+		if strings.HasSuffix(r.URL.Path, "/") || strings.HasSuffix(r.URL.Path, ".html") || r.URL.Path == "/sitemap.txt" {
 			expiry = expires
 		}
-		w.Header().Set("Expires", time.Now().Add(expiry).In(gmtZone).Format(time.RFC1123))
+		if expiry != 0 {
+			w.Header().Set("Expires", time.Now().Add(expiry).In(gmtZone).Format(time.RFC1123))
+		}
 		h.ServeHTTP(w, r)
 	})
 }

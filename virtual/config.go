@@ -10,9 +10,11 @@ import (
 
 // Config contains configuration data from the whisper.cfg file.
 type Config struct {
-	Expires       Duration          `toml:"expires"`
-	StaticExpires Duration          `toml:"staticexpires"`
-	Headers       map[string]string `toml:"headers"`
+	Expires       Duration          `toml:"expires"`       // Expiry duration for dynamic content
+	StaticExpires Duration          `toml:"staticexpires"` // Expiry duration for static content
+	CacheSize     int               `toml:"cachesize"`     // Cache size in megabytes
+	CacheDuration Duration          `toml:"cacheduration"` // Cache duration
+	Headers       map[string]string `toml:"headers"`       // Headers to add
 }
 
 // Config returns configuration from the whisper.cfg file.
@@ -22,7 +24,7 @@ func (vfs *FS) Config() (*Config, error) {
 	cfgBytes, err := fs.ReadFile(vfs.fs, "whisper.cfg")
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return nil, nil
+			return &cfg, nil
 		}
 		return nil, fmt.Errorf("Cannot read config file: %w", err)
 	} else {

@@ -118,6 +118,7 @@ package virtual
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"path"
@@ -135,6 +136,9 @@ type FS struct {
 
 // New returns a new FS that presents a virtual view of innerFS.
 func New(innerFS fs.FS) (*FS, error) {
+	if innerFS == nil {
+		return nil, fmt.Errorf("No inner file system")
+	}
 	var vfs = FS{
 		fs: innerFS,
 	}
