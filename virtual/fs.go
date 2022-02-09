@@ -175,7 +175,7 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	if err != nil {
 		// for files that don't exist, check for underlying matching files
 		if errors.Is(err, fs.ErrNotExist) && path.Ext(name) == ".html" {
-			extensions := []string{".md", ".png", ".jpg", ".git", ".jpeg"}
+			extensions := []string{".md", ".png", ".jpg", ".gif", ".jpeg"}
 			// if it's not in an image folder, only check markdown files
 			if !hasImageFolderPrefix(name) {
 				extensions = extensions[:1]
