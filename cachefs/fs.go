@@ -1,5 +1,5 @@
 /*
-cachefs implements a read-only cache around a fs.FS, using groupcache.
+Package cachefs implements a read-only cache around a fs.FS, using groupcache.
 
 Using cachefs is straightforward:
 

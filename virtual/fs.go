@@ -1,5 +1,5 @@
 /*
-virtual implements a "virtual" view over a fs.FS that makes it suitable for serving Markdown
+Package virtual implements a "virtual" view over a fs.FS that makes it suitable for serving Markdown
 and other files in a web format. It includes a template system and helpers for presenting
 a nice static web view and an easy-to-maintain format.
 
