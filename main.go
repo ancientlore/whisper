@@ -1,3 +1,132 @@
+/*
+whisper implements a simple web server aimed at small websites.
+
+Conventions
+
+In general, whisper serves static content from the location it's found - making it easy to structure your site how you want.
+There is special handling for certain content like Markdown files.
+
+See the example folder for a sample site layout. In general, whisper uses conventions instead of configuration files.
+Conventions used by this server include:
+
+* The template folder holds HTML templates, using Go's html/template package. These templates are used for rendering content but never served directly.
+* A sitemap.txt can be created as a template. See the example for details.
+* The default page for a folder is a Markdown file called index.md.
+* An optional whisper.cfg file holds settings should you want to preserve them.
+* Files 404.md and 500.md can be provided for custom errors.
+
+Markdown
+
+Web pages are generally written in Markdown and use HTML templates to render into the site. The default template to use is called "default"; you must
+have a "default" template and an "image" template.  Templates are stored in the "template" folder.
+
+NOTE: If no "template" folder is found, then default templates are loaded named "default" and "image". You probably don't want these because they are
+extremely basic, but it's okay for just messing around and viewing Markdown locally.
+
+Markdown may contain front matter which is in TOML format. The front matter is delimited by "+++"" at the start and end. For example:
+
+    +++
+    # This is my front matter
+    title = "My glorious page"
+    +++
+    # This is my Heading
+    This is my [Markdown](https://en.wikipedia.org/wiki/Markdown).
+
+Front matter may include:
+
+	Name         | Type             | Description
+	-------------|------------------|------------------------------------------
+	title        | string           | Title of page
+	date         | time             | Publish date
+	tags         | array of strings | Tags for the articles (not used yet)
+	template     | string           | Override the template to render this file
+	redirect     | duration         | Provide redirect info (not automated)
+	originalfile | string           | Name of the base Markdown or image file
+
+Front matter is used for sorting and constructing lists of articles.
+
+Templates
+
+whisper uses standard Go templates from the "html/template" package. Templates are passed the following data:
+
+    // FrontMatter holds data scraped from a Markdown page.
+    type FrontMatter struct {
+        Title        string    `toml:"title"`        // Title of this page
+        Date         time.Time `toml:"date"`         // Date the article appears
+        Template     string    `toml:"template"`     // The name of the template to use
+        Tags         []string  `toml:"tags"`         // Tags to assign to this article
+        Redirect     string    `toml:"redirect"`     // Issue a redirect to another location
+        OriginalFile string    `toml:"originalfile"` // The original file (markdown or image)
+    }
+
+    // PageInfo has information about the current page.
+    type PageInfo struct {
+        Path     string // path from URL
+        Filename string // end portion (file) from URL
+    }
+
+    // data is what is passed to markdown templates.
+    type data struct {
+        FrontMatter FrontMatter   // front matter from Markdown file or defaults
+        Page        PageInfo      // information aboout current page
+        Content     template.HTML // rendered Markdown
+    }
+
+Page is information about the current page, and FrontMatter is the front-matter from the current Markdown file.
+Content contains the HTML version of the Markdown file.
+
+Functions are added to the template for your convenience.
+
+	Function                          | Description
+	----------------------------------|------------
+	dir(path string) []File           | Return the contents of the given folder, excluding special files and subfolders.
+	sortbyname([]File) []File         | Sort by name (reverse)
+	sortbytime([]File) []File         | Sort by time (reverse)
+	match(string, ...string) bool     | Match string against file patterns
+	filter([]File, ...string) []File  | Filter list against file patterns
+	join(parts ...string) string      | The same as path.Join
+	ext(path string) string           | The same as path.Ext
+	prev([]File, string) *File        | Find the previous file based on Filename
+	next([]File, string) *File        | Find the next file based on Filename
+	reverse([]File) []File            | Reverse the list
+	trimsuffix(string, string) string | The same as strings.TrimSuffix
+	trimprefix(string, string) string | The same as strings.TrimPrefix
+	trimspace(string) string          | The same as strings.TrimSpace
+	markdown(string) template.HTML    | Render Markdown file into HTML
+	frontmatter(string) *FrontMatter  | Read front matter from file
+	now() time.Time                   | Current time
+
+File is defined as:
+
+    // File holds data about a page endpoint.
+    type File struct {
+        FrontMatter FrontMatter
+        Filename    string
+    }
+
+If File is not a Markdown file, then FrontMatter.Title is set to the file name and FrontMatter.Date is set to the modification
+time. The array is sorted by reverse date (most recent items first).
+
+Note that FrontMatter.OriginalFile is very useful because, for image templates, it will hold the name of the image file. You probably
+want to use it in the template.
+
+Image Templates
+
+Folders named "photos", "images", "pictures", "cartoons", "toons", "sketches", "artwork", or "drawings" use a special handler that can
+serve images using an HTML template called "image".
+
+Non-Goals
+
+It's not a goal to make templates reusable. I expect templates need editing for new sites.
+
+It's not a goal to automate creation of the menu.
+
+It's not a goal to be a fully-featured server. I run https://caddyserver.com/ in front of it.
+
+More Detail
+
+For more information take a look at the virtual package, which implements a virtual filesystem that handles rendering markdown into HTML.
+*/
 package main
 
 import (
@@ -14,21 +143,12 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/ancientlore/whisper/cachefs"
+	"github.com/ancientlore/whisper/virtual"
+	"github.com/ancientlore/whisper/web"
 	"github.com/facebookgo/flagenv"
 	"github.com/golang/groupcache"
-	"github.com/pelletier/go-toml/v2"
 )
-
-var (
-	gmtZone *time.Location
-	peers   *groupcache.HTTPPool
-)
-
-type config struct {
-	Expires       duration          `toml:"expires"`
-	StaticExpires duration          `toml:"staticexpires"`
-	Headers       map[string]string `toml:"headers"`
-}
 
 // main is where it all begins. 😀
 func main() {
@@ -38,8 +158,10 @@ func main() {
 		fReadTimeout       = flag.Duration("readtimeout", 10*time.Second, "HTTP server read timeout.")
 		fReadHeaderTimeout = flag.Duration("readheadertimeout", 5*time.Second, "HTTP server read header timeout.")
 		fWriteTimeout      = flag.Duration("writetimeout", 30*time.Second, "HTTP server write timeout.")
+		fIdleTimeout       = flag.Duration("idletimeout", 60*time.Second, "HTTP server keep-alive timeout.")
 		fRoot              = flag.String("root", ".", "Root of web site.")
-		fCacheDuration     = flag.Duration("cacheduration", 5*time.Minute, "How long to cache content.")
+		fCacheSize         = flag.Int("cachesize", 0, "Cache size in MB.")
+		fCacheDuration     = flag.Duration("cacheduration", 0, "How long to cache content.")
 		fExpires           = flag.Duration("expires", 0, "Default expires header.")
 		fStaticExpires     = flag.Duration("staticexpires", 0, "Default expires header for static content.")
 		fWaitForFiles      = flag.Bool("wait", false, "Wait for files to appear in root folder before starting up.")
@@ -47,13 +169,71 @@ func main() {
 	flag.Parse()
 	flagenv.Parse()
 
-	// init GMT time zone
-	err := initGMT()
-	if err != nil {
-		log.Printf("Cannot load GMT, using UTC instead: %s", err)
-	} else {
-		log.Print("Loaded GMT zone.")
+	// If requested, wait for files to show up in root folder, up to 60 seconds
+	if *fWaitForFiles {
+		err := waitForFiles(*fRoot)
+		if err != nil {
+			log.Print(err)
+			os.Exit(1)
+		}
 	}
+
+	// Setup groupcache (in this example with no peers)
+	groupcache.RegisterPeerPicker(func() groupcache.PeerPicker { return groupcache.NoPeers{} })
+
+	// Create the virtual file system
+	virtualFileSystem, err := virtual.New(os.DirFS(*fRoot))
+	if err != nil {
+		log.Print(err)
+		os.Exit(2)
+	}
+
+	// get the config
+	cfg, err := virtualFileSystem.Config()
+	if err != nil {
+		log.Print(err)
+		os.Exit(3)
+	}
+
+	// Apply config overrides
+	if *fExpires != 0 {
+		cfg.Expires = virtual.Duration(*fExpires)
+	}
+	if *fStaticExpires != 0 {
+		cfg.StaticExpires = virtual.Duration(*fStaticExpires)
+	}
+	if *fCacheSize != 0 {
+		cfg.CacheSize = *fCacheSize
+	}
+	if *fCacheDuration != 0 {
+		cfg.CacheDuration = virtual.Duration(*fCacheDuration)
+	}
+	if cfg.CacheSize <= 0 {
+		cfg.CacheSize = 1 // need a default
+	}
+	log.Printf("Expires: %s", cfg.Expires.String())
+	log.Printf("Static Expires: %s", cfg.StaticExpires.String())
+	log.Printf("Cache Size: %dMB", cfg.CacheSize)
+	log.Printf("Cache Duration: %s", cfg.CacheDuration.String())
+
+	// Create the cached file system
+	cachedFileSystem := cachefs.New(virtualFileSystem, &cachefs.Config{GroupName: "whisper", SizeInBytes: int64(cfg.CacheSize) * 1024 * 1024, Duration: time.Duration(cfg.CacheDuration)})
+
+	// create handler
+	handler := web.HeaderHandler(
+		web.ExpiresHandler(
+			gziphandler.GzipHandler(
+				web.ErrorHandler(
+					http.FileServer(
+						http.FS(cachedFileSystem),
+					),
+					cachedFileSystem,
+				),
+			),
+			time.Duration(cfg.Expires),
+			time.Duration(cfg.StaticExpires),
+		),
+		cfg.Headers)
 
 	// Create HTTP server
 	var srv = http.Server{
@@ -61,123 +241,12 @@ func main() {
 		ReadTimeout:       *fReadTimeout,
 		WriteTimeout:      *fWriteTimeout,
 		ReadHeaderTimeout: *fReadHeaderTimeout,
+		IdleTimeout:       *fIdleTimeout,
+		Handler:           handler,
 	}
 
-	// If requested, wait for files to show up in root folder, up to 60 seconds
-	if *fWaitForFiles {
-		foundFiles := false
-		for i := 0; i < 60; i++ {
-			d, err := os.ReadDir(*fRoot)
-			if err != nil {
-				log.Printf("os.Dir: %s", err)
-			} else if len(d) > 0 {
-				var dir []string
-				var hasError bool
-				for _, entry := range d {
-					if entry.IsDir() {
-						dir = append(dir, entry.Name()+"/")
-					} else {
-						dir = append(dir, entry.Name())
-						if entry.Name() == "cpln-error.txt" {
-							hasError = true
-							errData, err := os.ReadFile(path.Join(*fRoot, "cpln-error.txt"))
-							log.Printf("cpln-error.txt: %s %v", errData, err)
-						}
-					}
-				}
-				log.Printf("Found files %v", dir)
-				if !hasError {
-					foundFiles = true
-					break
-				}
-			}
-			if i%10 == 0 {
-				log.Print("Waiting for files...")
-			}
-			time.Sleep(time.Second)
-		}
-		if !foundFiles {
-			log.Printf("No files in root folder")
-			os.Exit(6)
-		}
-	}
-
-	// Switch to site folder
-	err = os.Chdir(*fRoot)
-	if err != nil {
-		log.Printf("Cannot switch to root %q: %s", *fRoot, err)
-		os.Exit(1)
-	}
-	log.Printf("Changed to %q directory.", *fRoot)
-
-	// load config
-	var cfg config
-	cfgBytes, err := os.ReadFile("whisper.cfg")
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			log.Printf("Cannot read config file: %s", err)
-			os.Exit(4)
-		}
-		log.Print("No config file found.")
-	} else {
-		err = toml.Unmarshal(cfgBytes, &cfg)
-		if err != nil {
-			log.Printf("Cannot parse config file: %s", err)
-			os.Exit(5)
-		}
-		log.Printf("Read config file: %+v", cfg)
-	}
-	if *fExpires != 0 {
-		cfg.Expires = duration(*fExpires)
-	}
-	if *fStaticExpires != 0 {
-		cfg.StaticExpires = duration(*fStaticExpires)
-	}
-
-	// Parse templates
-	custom, err := loadTemplates()
-	if err != nil {
-		log.Printf("Cannot parse templates: %s", err)
-		os.Exit(2)
-	}
-	if !custom {
-		log.Print("ERROR: No template folder found; using default templates.")
-	}
-	tpl, mt := getTemplates()
-	log.Printf("Loaded templates: %s", tpl.DefinedTemplates())
-	log.Printf("Templates last modified: %s", mt.In(gmtZone).Format(time.RFC1123))
-
-	// Parse sitemap template
-	ok, err := loadSitemapTemplate()
-	if err != nil {
-		log.Printf("Unable to load sitemap.txt template: %s", err)
-		os.Exit(3)
-	}
-	if !ok {
-		log.Print("No sitemap.txt template found.")
-	} else {
-		log.Print("Loaded sitemap.txt template.")
-	}
-
-	// initialize cache
-	initGroupCache()
-	initReadDirCache(2*1024*1024, *fCacheDuration)
-	initMarkdownCache(2*1024*1024, *fCacheDuration)
-	initTemplateCache(2*1024*1024, *fCacheDuration)
-	log.Print("Initialized cache.")
-
-	// Setup handlers
-	http.Handle("/template/", gziphandler.GzipHandler(headerHandler(http.HandlerFunc(notFound), cfg.Headers)))
-	http.Handle("/whisper.cfg", gziphandler.GzipHandler(headerHandler(http.HandlerFunc(notFound), cfg.Headers)))
-	http.Handle("/sitemap.txt", gziphandler.GzipHandler(headerHandler(http.HandlerFunc(sitemap(1024*1024, *fCacheDuration)), cfg.Headers)))
-	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
-	imageHandler := gziphandler.GzipHandler(headerHandler(extHandler(existsHandler(http.FileServer(http.Dir(".")), time.Duration(cfg.StaticExpires)), time.Duration(cfg.Expires), imageTypes, "image"), cfg.Headers))
-	imageFolders := []string{"photos", "images", "pictures", "cartoons", "toons", `sketches`, `artwork`, `drawings`}
-	for _, folder := range imageFolders {
-		http.Handle("/"+folder+"/", imageHandler)
-	}
-	http.Handle("/", gziphandler.GzipHandler(headerHandler(markdown(existsHandler(http.FileServer(http.Dir(".")), time.Duration(cfg.StaticExpires)), time.Duration(cfg.Expires)), cfg.Headers)))
-	log.Print("Created handlers.")
+	// Start cache monitor
+	monc := stats("whisper")
 
 	// Create signal handler for graceful shutdown
 	go func() {
@@ -197,6 +266,7 @@ func main() {
 			// Error from closing listeners, or context timeout:
 			log.Printf("HTTP server Shutdown: %v", err)
 		}
+		close(monc)
 	}()
 
 	// Listen for requests
@@ -208,29 +278,64 @@ func main() {
 	}
 }
 
-// initGMT initialized the GMT zone used in headers.
-func initGMT() error {
-	var err error
-	gmtZone, err = time.LoadLocation("GMT")
-	if err != nil {
-		gmtZone = time.UTC
+func stats(groupName string) chan<- bool {
+	c := make(chan bool)
+	g := groupcache.GetGroup(groupName)
+	if g != nil {
+		go func() {
+			t := time.NewTicker(5 * time.Minute)
+			for {
+				select {
+				case _, ok := <-c:
+					if !ok {
+						return
+					}
+				case <-t.C:
+					s := g.CacheStats(groupcache.HotCache)
+					log.Printf("Hot Cache  %#v", s)
+					s = g.CacheStats(groupcache.MainCache)
+					log.Printf("Main Cache %#v", s)
+				}
+			}
+		}()
 	}
-	return err
+	return c
 }
 
-// initGroupCache initializes our group cache.
-func initGroupCache() {
-	me := "http://127.0.0.1"
-	peers = groupcache.NewHTTPPool(me)
-	// Whenever peers change:
-	// peers.Set("http://10.0.0.1", "http://10.0.0.2", "http://10.0.0.3")
-}
-
-func headerHandler(h http.Handler, hdrs map[string]string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for k, v := range hdrs {
-			w.Header().Set(k, v)
+func waitForFiles(pathname string) error {
+	foundFiles := false
+	for i := 0; i < 60; i++ {
+		d, err := os.ReadDir(pathname)
+		if err != nil {
+			log.Printf("os.Dir: %s", err)
+		} else if len(d) > 0 {
+			var dir []string
+			var hasError bool
+			for _, entry := range d {
+				if entry.IsDir() {
+					dir = append(dir, entry.Name()+"/")
+				} else {
+					dir = append(dir, entry.Name())
+					if entry.Name() == "cpln-error.txt" {
+						hasError = true
+						errData, err := os.ReadFile(path.Join(pathname, "cpln-error.txt"))
+						log.Printf("cpln-error.txt: %s %v", errData, err)
+					}
+				}
+			}
+			log.Printf("Found files %v", dir)
+			if !hasError {
+				foundFiles = true
+				break
+			}
 		}
-		h.ServeHTTP(w, r)
-	})
+		if i%10 == 0 {
+			log.Print("Waiting for files...")
+		}
+		time.Sleep(time.Second)
+	}
+	if !foundFiles {
+		return fmt.Errorf("No files found in %q", pathname)
+	}
+	return nil
 }

@@ -1,20 +1,48 @@
+/*
+Package cachefs implements a read-only cache around a fs.FS, using groupcache.
+
+Using cachefs is straightforward:
+
+	// Setup groupcache (in this example with no peers)
+	groupcache.RegisterPeerPicker(func() groupcache.PeerPicker { return groupcache.NoPeers{} })
+
+	// Create the cached file system with group name "groupName", a 10MB cache, and a ten second expiration
+	cachedFileSystem := cachefs.New(os.DirFS("."), &cachefs.Config{GroupName: "groupName", SizeInBytes: 10*1024*1024, Duration: 10*time.Second})
+
+	// Use the file system as usual...
+
+cachefs "wraps" the underlying file system with caching. You can specify groupcache parameters - the group name
+and the cache size.
+
+groupcache does not support expiration, but cachefs supports quantizing values so that expiration happens
+around the expiration duration provided. Expiration can be disabled by specifying 0 for the duration.
+
+See https://pkg.go.dev/github.com/golang/groupcache for more information on groupcache.
+*/
 package cachefs
 
 import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/golang/groupcache"
+	"github.com/google/uuid"
 )
+
+// Config stores the configuration settings of your cache.
+type Config struct {
+	GroupName   string        // Name of the groupcache group
+	SizeInBytes int64         // Size of the cache
+	Duration    time.Duration // Duration after which items can expire
+	NoStat      bool          // Don't do extra file Stat calls in ReadDir
+}
 
 // An cacheFS provides cached access to a hierarchical file system.
 type cacheFS struct {
@@ -48,9 +76,6 @@ func (cfs *cacheFS) Open(name string) (fs.File, error) {
 	ctx := context.Background()
 	err := cfs.cache.Get(ctx, q.Encode(), groupcache.ByteViewSink(&buf))
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
-		}
 		return nil, &fs.PathError{Op: "open", Path: name, Err: err}
 	}
 	decoder := gob.NewDecoder(buf.Reader())
@@ -62,17 +87,20 @@ func (cfs *cacheFS) Open(name string) (fs.File, error) {
 	return &f, nil
 }
 
-// New creates a new cached FS around innerFS using groupcache with the given groupName
-// and sizeInBytes. The duration field allows you to use quantized values
-// in order to provide expiration of items in the cache. The returned FS is read-only.
-//
-// A limitation is that ReadDir returns directory entries that, when Info() is called,
-// will not return the size, mode, or modification time of the file. This is done
-// to prevent needing to stat each file in the list in order to accumulate the data.
-func New(innerFS fs.FS, groupName string, sizeInBytes int64, duration time.Duration) fs.FS {
+// New creates a new cached FS around innerFS using groupcache with the given
+// configuration. The returned FS is read-only. If config is nil, it defaults
+// to a 1MB cache using a random GUID as a name.
+func New(innerFS fs.FS, config *Config) fs.FS {
+	if config == nil {
+		config = &Config{
+			GroupName:   uuid.NewString(),
+			SizeInBytes: 1024 * 1024,
+		}
+	}
+	noStat := config.NoStat
 	return &cacheFS{
-		duration: duration,
-		cache: groupcache.NewGroup(groupName, sizeInBytes, groupcache.GetterFunc(
+		duration: config.Duration,
+		cache: groupcache.NewGroup(config.GroupName, config.SizeInBytes, groupcache.GetterFunc(
 			func(ctx context.Context, key string, dest groupcache.Sink) error {
 				// Parse query which contains quantize info and path
 				q, err := url.ParseQuery(key)
@@ -105,20 +133,30 @@ func New(innerFS fs.FS, groupName string, sizeInBytes int64, duration time.Durat
 					if err != nil {
 						return err
 					}
-					resultFile.Dirs = make([]dirEntry, len(entries))
-					for i, entry := range entries {
-						/*
+					resultFile.Dirs = make([]dirEntry, 0, len(entries))
+					for _, entry := range entries {
+						if !noStat {
 							fi, err := entry.Info()
 							if err != nil {
-								return err
+								// Pretend it doesn't exist, like (*os.File).Readdir does.
+								continue
 							}
-							resultFile.Dirs[i].FI.Nm = fi.Name()
-							resultFile.Dirs[i].FI.Md = fi.Mode()
-							resultFile.Dirs[i].FI.Sz = fi.Size()
-							resultFile.Dirs[i].FI.Mt = fi.ModTime()
-						*/
-						resultFile.Dirs[i].FI.Nm = entry.Name()
-						resultFile.Dirs[i].FI.Md = entry.Type()
+							resultFile.Dirs = append(resultFile.Dirs, dirEntry{
+								FI: fileInfo{
+									Nm: fi.Name(),
+									Md: fi.Mode(),
+									Sz: fi.Size(),
+									Mt: fi.ModTime(),
+								},
+							})
+						} else {
+							resultFile.Dirs = append(resultFile.Dirs, dirEntry{
+								FI: fileInfo{
+									Nm: entry.Name(),
+									Md: entry.Type(),
+								},
+							})
+						}
 					}
 				} else {
 					// Read file

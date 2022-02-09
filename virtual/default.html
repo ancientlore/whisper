@@ -1,0 +1,79 @@
+{{define "default"}}<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>{{.FrontMatter.Title}}</title>
+	</head>
+	<body>
+		<table>
+			<tr>
+				<td style="vertical-align: top">
+					<h3>{{.FrontMatter.Title}}</h3>
+					<p>
+						{{ join .Page.Path .Page.Filename}}<br/>
+						{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}<br/>
+						{{range .FrontMatter.Tags}}{{.}} {{end}}<br/>
+						({{if .FrontMatter.Template}}{{.FrontMatter.Template}}{{else}}default{{end}})<br/>
+						{{.FrontMatter.OriginalFile}}
+					</p>
+					<p>
+						<a href="/">Home</a>
+					</p>
+					<p>
+						<ul>{{ $p := .Page.Path}}{{range sortbyname (dir .Page.Path)}}
+							<li>
+								<a href="{{join $p .Filename}}">{{if eq ".md" (ext .Filename)}}{{.FrontMatter.Title}}{{else}}{{.Filename}}{{end}}</a><br/>
+								{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}
+							</li>
+						{{end}}</ul>
+					</p>
+					<p style="font-size: small">{{join .Page.Path .Page.Filename}}</p>
+				</td>
+				<td style="vertical-align: top; padding-left: 16px;">
+					{{.Content}}
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>
+{{end}}{{define "image"}}<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>{{.FrontMatter.Title}}</title>
+	</head>
+	<body>
+		<table>
+			<tr>
+				<td style="vertical-align: top">
+					<h3>{{.FrontMatter.Title}}</h3>
+					<p>
+						{{ join .Page.Path .Page.Filename}}<br/>
+						{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}<br/>
+						{{range .FrontMatter.Tags}}{{.}} {{end}}<br/>
+						({{if .FrontMatter.Template}}{{.FrontMatter.Template}}{{else}}default{{end}})<br/>
+						{{.FrontMatter.OriginalFile}}
+					</p>
+					<p>
+						<a href="/">Home</a>
+					</p>
+					<p>
+						<ul>{{ $p := .Page.Path}}{{range sortbyname (dir .Page.Path)}}
+							<li>
+								<a href="{{join $p .Filename}}">{{if eq ".md" (ext .Filename)}}{{.FrontMatter.Title}}{{else}}{{.Filename}}{{end}}</a><br/>
+								{{.FrontMatter.Date.Format "02 Jan 06 15:04 MST"}}
+							</li>
+						{{end}}</ul>
+					</p>
+					<p style="font-size: small">{{join .Page.Path .Page.Filename}}</p>
+				</td>
+				<td style="vertical-align: top; padding-left: 16px;">
+					{{.Content}}
+					<h3>{{.FrontMatter.Title}}</h3>
+					<img src="{{join .Page.Path .Page.Filename}}" alt="{{.FrontMatter.Title}}"/>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>
+{{end}}

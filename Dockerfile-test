@@ -1,0 +1,21 @@
+FROM golang:1.17 as builder
+WORKDIR /go/src/github.com/ancientlore/whisper
+COPY . .
+RUN go version
+RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go get .
+RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go install
+
+#FROM ancientlore/goimg:latest
+
+FROM golang:1.17
+RUN apt-get install apt-transport-https ca-certificates gnupg
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+RUN apt-get update && apt-get install -y google-cloud-sdk
+
+COPY --from=builder /go/bin/whisper /usr/local/bin/whisper
+COPY example/static/dog.png /home/www/whisper.png
+COPY example/.index-docker.md /home/www/index.md
+EXPOSE 8080
+ENV ROOT /home/www
+ENTRYPOINT ["/usr/local/bin/whisper"]
