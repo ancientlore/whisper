@@ -9,6 +9,6 @@ fi
 f=$(mktemp)
 curl -L "$url" > $f
 
-hurl -addr :9000 -conns 100 -discard -loop 100000 @"$f"
+hurl -addr :9000 -conns 10 -discard -loop 100000 @"$f"
 
 rm "$f"
