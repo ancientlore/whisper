@@ -35,7 +35,7 @@ func (vfs *FS) dir(folderpath string) []File {
 				fm.Date = fi.ModTime().Local()
 			}
 			if !entry.IsDir() && path.Ext(entry.Name()) == ".html" {
-				err = vfs.readFrontMatter(path.Join(folderpath, entry.Name()+".md"), &fm)
+				err = vfs.readFrontMatter(path.Join(folderpath, strings.TrimSuffix(entry.Name(), ".html")+".md"), &fm)
 				if err != nil && !errors.Is(err, fs.ErrNotExist) {
 					log.Printf("readDir: %s", err)
 				}
