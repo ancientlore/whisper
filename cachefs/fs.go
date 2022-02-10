@@ -78,11 +78,14 @@ func (cfs *cacheFS) Open(name string) (fs.File, error) {
 	if err != nil {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: err}
 	}
-	decoder := gob.NewDecoder(buf.Reader())
+	rdr := countingReader{Reader: buf.Reader()}
+	decoder := gob.NewDecoder(&rdr)
 	err = decoder.Decode(&f)
 	if err != nil {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: err}
 	}
+	// rest of the slice is the file data
+	f.ReadSeeker = buf.SliceFrom(rdr.Count()).Reader()
 
 	return &f, nil
 }
@@ -127,6 +130,7 @@ func New(innerFS fs.FS, config *Config) fs.FS {
 						Mt: info.ModTime(),
 					},
 				}
+				var data []byte
 				if info.IsDir() {
 					// Read directory info
 					entries, err := f.(fs.ReadDirFile).ReadDir(-1)
@@ -160,7 +164,7 @@ func New(innerFS fs.FS, config *Config) fs.FS {
 					}
 				} else {
 					// Read file
-					resultFile.Data, err = io.ReadAll(f)
+					data, err = io.ReadAll(f)
 					if err != nil {
 						return err
 					}
@@ -171,6 +175,14 @@ func New(innerFS fs.FS, config *Config) fs.FS {
 				err = encoder.Encode(resultFile)
 				if err != nil {
 					return err
+				}
+				// Write data afterward to avoid extra copies of large stuff
+				n, err := buf.Write(data)
+				if err != nil {
+					return err
+				}
+				if n != len(data) {
+					return fmt.Errorf("Wrote incorrect number of  bytes: %d of %d", n, len(data))
 				}
 				return dest.SetBytes(buf.Bytes())
 			})),

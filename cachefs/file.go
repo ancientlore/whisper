@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math"
 	"time"
 )
 
 // file represents a cached file
 type file struct {
-	Data []byte     // Contents of the file
+	io.ReadSeeker
+
 	FI   fileInfo   // Metadata about the file
 	pos  int        // Current position
 	Dirs []dirEntry // Directory entries
@@ -19,61 +19,6 @@ type file struct {
 // Stat returns information about the file.
 func (f file) Stat() (fs.FileInfo, error) {
 	return f.FI, nil
-}
-
-// Read reads up to len(b) bytes from the File. It returns the number of bytes read
-// and any error encountered. At end of file, Read returns 0, io.EOF.
-func (f *file) Read(b []byte) (int, error) {
-	if f.pos >= len(f.Data) {
-		return 0, io.EOF
-	}
-	n := copy(b, f.Data[f.pos:])
-	f.pos += n
-	return n, nil
-}
-
-// Seek sets the offset for the next Read or Write to offset, interpreted according
-// to whence: io.SeekStart means relative to the start of the file, io.SeekCurrent
-// means relative to the current offset, and io.SeekEnd means relative to the end.
-// Seek returns the new offset relative to the start of the file and an error, if any.
-//
-// Seeking to an offset before the start of the file is an error. Seeking to any
-// positive offset is legal, but the behavior of subsequent I/O operations on the
-// underlying object is implementation-dependent.
-func (f *file) Seek(offset int64, whence int) (int64, error) {
-	// Check for dir
-	if f.FI.IsDir() {
-		return 0, fmt.Errorf("Cannot Seek on a directory")
-	}
-	// Sanitize offset
-	if offset > math.MaxInt || offset < math.MinInt {
-		return int64(f.pos), fmt.Errorf("Offset value too large for Seek: %d", offset)
-	}
-
-	// Calculate new position
-	var newPos int64
-	switch whence {
-	case io.SeekStart:
-		newPos = offset
-	case io.SeekCurrent:
-		newPos = int64(f.pos) + offset
-	case io.SeekEnd:
-		newPos = int64(len(f.Data)) + offset
-	default:
-		return int64(f.pos), fmt.Errorf("Invalid whence value for Seek: %d", whence)
-	}
-
-	// Check sanity of new position
-	if newPos < 0 {
-		return int64(f.pos), fmt.Errorf("Cannot Seek before start of file: %d", newPos)
-	}
-	if newPos > int64(len(f.Data)) {
-		newPos = int64(len(f.Data))
-	}
-
-	// Finalize and return
-	f.pos = int(newPos)
-	return int64(f.pos), nil
 }
 
 // Close closes the file. Cached files are in memory, so this function does nothing.
