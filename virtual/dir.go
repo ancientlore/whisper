@@ -46,15 +46,15 @@ func (vfs *FS) dir(folderpath string) []File {
 	return f
 }
 
-// sortByName sorts the files by the time in reverse order
+// sortByTime sorts the files by the time in reverse order
 func sortByTime(f []File) []File {
-	sort.Slice(f, func(i, j int) bool { return f[i].FrontMatter.Date.Before(f[j].FrontMatter.Date) })
+	sort.Slice(f, func(i, j int) bool { return f[j].FrontMatter.Date.Before(f[i].FrontMatter.Date) })
 	return f
 }
 
 // sortByName sorts the files by the time in reverse order
 func sortByName(f []File) []File {
-	sort.Slice(f, func(i, j int) bool { return f[i].Filename < f[j].Filename })
+	sort.Slice(f, func(i, j int) bool { return f[j].Filename < f[i].Filename })
 	return f
 }
 
