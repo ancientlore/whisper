@@ -36,8 +36,21 @@ func (vfs *FS) dir(folderpath string) []File {
 			}
 			if !entry.IsDir() && path.Ext(entry.Name()) == ".html" {
 				err = vfs.readFrontMatter(path.Join(folderpath, strings.TrimSuffix(entry.Name(), ".html")+".md"), &fm)
-				if err != nil && !errors.Is(err, fs.ErrNotExist) {
-					log.Printf("readDir: %s", err)
+				if err != nil {
+					if !errors.Is(err, fs.ErrNotExist) {
+						log.Printf("readDir: %s", err)
+					} else if hasImageFolderPrefix(folderpath) {
+						extensions := []string{".png", ".jpg", ".gif", ".jpeg"}
+						newNm := strings.TrimSuffix(entry.Name(), path.Ext(entry.Name()))
+						// find file with matching extension
+						for _, ext := range extensions {
+							_, err = fs.Stat(vfs, path.Join(folderpath, newNm+ext))
+							if err == nil {
+								fm.OriginalFile = newNm + ext
+								break
+							}
+						}
+					}
 				}
 			}
 			f = append(f, File{FrontMatter: fm, Filename: entry.Name()})
