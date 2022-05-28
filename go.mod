@@ -7,7 +7,7 @@ require (
 	github.com/facebookgo/flagenv v0.0.0-20160425205200-fcd59fca7456
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/uuid v1.3.0
-	github.com/pelletier/go-toml/v2 v2.0.0-beta.6
+	github.com/pelletier/go-toml/v2 v2.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
 )
 
