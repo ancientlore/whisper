@@ -121,9 +121,11 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log"
 	"path"
 	"strings"
 	"sync"
+	"time"
 )
 
 // FS provides a virtual view of the file system suitable for serving Markdown
@@ -132,12 +134,13 @@ type FS struct {
 	fs       fs.FS
 	tpl      *template.Template
 	tplMutex sync.RWMutex
+	done     chan bool //used to stop the template reloader
 }
 
 // New returns a new FS that presents a virtual view of innerFS.
 func New(innerFS fs.FS) (*FS, error) {
 	if innerFS == nil {
-		return nil, fmt.Errorf("No inner file system")
+		return nil, fmt.Errorf("no inner file system")
 	}
 	var vfs = FS{
 		fs: innerFS,
@@ -148,6 +151,39 @@ func New(innerFS fs.FS) (*FS, error) {
 	}
 
 	return &vfs, nil
+}
+
+func (vfs *FS) ReloadTemplates(tplReload time.Duration) {
+	if tplReload > 0 {
+		vfs.done = make(chan bool)
+		go vfs.reloadTemplates(tplReload)
+	}
+}
+
+func (vfs *FS) Close() error {
+	if vfs.done != nil {
+		vfs.done <- true
+	}
+	return nil
+}
+
+// reloadTemplates is started as a goroutine to periodically reload the templates
+// in case of edits.
+func (vfs *FS) reloadTemplates(tplReload time.Duration) {
+	t := time.NewTicker(tplReload)
+	defer t.Stop()
+	for {
+		select {
+		case <-vfs.done:
+			return
+		case <-t.C:
+			_, err := vfs.loadTemplates()
+			log.Print("Loaded templates")
+			if err != nil {
+				log.Print(err)
+			}
+		}
+	}
 }
 
 // Open opens the named file.

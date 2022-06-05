@@ -80,7 +80,7 @@ func (f *virtualDir) Close() error {
 // ReadDir returns the DirEntry list read until that point and a non-nil error.
 func (f *virtualDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	if !f.fi.IsDir() {
-		return nil, &fs.PathError{Op: "readdir", Path: f.fi.Name(), Err: fmt.Errorf("Not a directory: %w", fs.ErrInvalid)}
+		return nil, &fs.PathError{Op: "readdir", Path: f.fi.Name(), Err: fmt.Errorf("not a directory: %w", fs.ErrInvalid)}
 	}
 
 	if n <= 0 {

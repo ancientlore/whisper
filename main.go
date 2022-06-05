@@ -162,6 +162,7 @@ func main() {
 		fRoot              = flag.String("root", ".", "Root of web site.")
 		fCacheSize         = flag.Int("cachesize", 0, "Cache size in MB.")
 		fCacheDuration     = flag.Duration("cacheduration", 0, "How long to cache content.")
+		fTemplateReload    = flag.Duration("templatereload", 10*time.Minute, "How often to reload templates.")
 		fExpires           = flag.Duration("expires", 0, "Default expires header.")
 		fStaticExpires     = flag.Duration("staticexpires", 0, "Default expires header for static content.")
 		fWaitForFiles      = flag.Bool("wait", false, "Wait for files to appear in root folder before starting up.")
@@ -187,6 +188,8 @@ func main() {
 		log.Print(err)
 		os.Exit(2)
 	}
+	defer virtualFileSystem.Close()
+	virtualFileSystem.ReloadTemplates(*fTemplateReload)
 
 	// get the config
 	cfg, err := virtualFileSystem.Config()
@@ -335,7 +338,7 @@ func waitForFiles(pathname string) error {
 		time.Sleep(time.Second)
 	}
 	if !foundFiles {
-		return fmt.Errorf("No files found in %q", pathname)
+		return fmt.Errorf("no files found in %q", pathname)
 	}
 	return nil
 }

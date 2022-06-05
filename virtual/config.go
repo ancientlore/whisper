@@ -26,11 +26,11 @@ func (vfs *FS) Config() (*Config, error) {
 		if errors.Is(err, fs.ErrNotExist) {
 			return &cfg, nil
 		}
-		return nil, fmt.Errorf("Cannot read config file: %w", err)
+		return nil, fmt.Errorf("cannot read config file: %w", err)
 	} else {
 		err = toml.Unmarshal(cfgBytes, &cfg)
 		if err != nil {
-			return nil, fmt.Errorf("Cannot parse config file: %w", err)
+			return nil, fmt.Errorf("cannot parse config file: %w", err)
 		}
 	}
 	return &cfg, nil

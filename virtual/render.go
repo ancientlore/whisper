@@ -152,6 +152,10 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 		return nil
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
 	var wtr bytes.Buffer
 	err = sitemapTpl.ExecuteTemplate(&wtr, "sitemap", files)
 	if err != nil {
@@ -174,7 +178,7 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 func (vfs *FS) newDirectory(f fs.File, pathname string) (fs.File, error) {
 	rdf, ok := f.(fs.ReadDirFile)
 	if !ok {
-		return nil, &fs.PathError{Op: "open", Err: fmt.Errorf("Not a directory: %w", fs.ErrInvalid)}
+		return nil, &fs.PathError{Op: "open", Err: fmt.Errorf("not a directory: %w", fs.ErrInvalid)}
 	}
 
 	fi, err := rdf.Stat()
