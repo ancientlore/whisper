@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -35,7 +36,8 @@ func ExpiresHandler(h http.Handler, expires, staticExpires time.Duration) http.H
 			expiry = expires
 		}
 		if expiry != 0 {
-			w.Header().Set("Expires", time.Now().Add(expiry).In(gmtZone).Format(time.RFC1123))
+			// w.Header().Set("Expires", time.Now().Add(expiry).In(gmtZone).Format(time.RFC1123))
+			w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", int64(expiry.Seconds())))
 		}
 		h.ServeHTTP(w, r)
 	})
