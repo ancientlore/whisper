@@ -10,6 +10,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/russross/blackfriday/v2"
@@ -73,7 +74,7 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 			nm: bn,
 			sz: int64(wtr.Len()),
 			md: fi.Mode(),
-			mt: fi.ModTime(),
+			mt: time.Now(), // needs to be more dynamic than fi.ModTime(),
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
 	}, nil
@@ -116,7 +117,7 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 			nm: bn,
 			sz: int64(wtr.Len()),
 			md: fi.Mode(),
-			mt: fi.ModTime(),
+			mt: time.Now(), // needs to be more dynamic than fi.ModTime(),
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
 	}, nil
@@ -169,7 +170,7 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 			nm: bn,
 			sz: int64(wtr.Len()),
 			md: fi.Mode(),
-			mt: fi.ModTime(),
+			mt: time.Now(), // needs to be more dynamic than fi.ModTime(),
 		},
 		reader: bytes.NewReader(wtr.Bytes()),
 	}, nil
