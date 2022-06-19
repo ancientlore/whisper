@@ -277,14 +277,15 @@ func TestFileSize(t *testing.T) {
 
 	t.Logf("Using ReadDir size is %d, using Stat size is %d", fi1.Size(), fi2.Size())
 
-	if fi1.Size() != fi2.Size() {
-		// TODO: Reenable test
-		//t.Errorf("Sizes don't match: %d vs %d", fi1.Size(), fi2.Size())
-	}
+	// TODO: Reenable test
+	/*
+		if fi1.Size() != fi2.Size() {
+			t.Errorf("Sizes don't match: %d vs %d", fi1.Size(), fi2.Size())
+		}
+	*/
 }
 
 func TestReadDirLoop(t *testing.T) {
-	const count = 10
 	rootFS := os.DirFS(".")
 	fileSys, err := New(rootFS)
 	if err != nil {
