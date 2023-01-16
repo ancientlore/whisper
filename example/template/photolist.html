@@ -3,7 +3,7 @@
 <div class="content">
     {{.Content}}
     <ul>
-    {{ $p := .Page.Path}}{{range filter (sortbyname (dir .Page.Path)) "*.png" "*.jpg" "*.gif"}}
+    {{ $p := .Page.Path}}{{range filter (sortbyname (dir .Page.Path)) "*.png" "*.jpg" "*.webp" "*.gif"}}
     <li><a href="{{join $p (trimsuffix .Filename (ext .Filename))}}.html">{{.FrontMatter.Title}}</a></li>
     {{end}}</ul>
 </div>

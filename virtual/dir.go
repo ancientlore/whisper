@@ -40,7 +40,7 @@ func (vfs *FS) dir(folderpath string) []File {
 					if !errors.Is(err, fs.ErrNotExist) {
 						log.Printf("readDir: %s", err)
 					} else if hasImageFolderPrefix(folderpath) {
-						extensions := []string{".png", ".jpg", ".gif", ".jpeg"}
+						extensions := []string{".png", ".jpg", ".gif", ".webp", ".jpeg"}
 						newNm := strings.TrimSuffix(entry.Name(), path.Ext(entry.Name()))
 						// find file with matching extension
 						for _, ext := range extensions {

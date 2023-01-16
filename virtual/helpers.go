@@ -46,7 +46,7 @@ func hasImageFolderPrefix(s string) bool {
 
 // hasImageExtension checks if the path ends in an image type.
 func hasImageExtension(s string) bool {
-	imageTypes := []string{".png", ".jpg", ".gif", ".jpeg"}
+	imageTypes := []string{".png", ".jpg", ".gif", ".webp", ".jpeg"}
 	for _, ext := range imageTypes {
 		if strings.HasSuffix(s, ext) {
 			return true

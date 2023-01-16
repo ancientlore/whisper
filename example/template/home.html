@@ -12,7 +12,7 @@
     {{end}}
     <hr/>
     <h3>Latest Photo</h3>
-    {{ $p := filter (sortbyname (dir "/photos")) "*.png" "*.jpg" "*.gif"}}{{if len $p}}{{with index $p 0}}
+    {{ $p := filter (sortbyname (dir "/photos")) "*.png" "*.jpg" "*.webp" "*.gif"}}{{if len $p}}{{with index $p 0}}
     <amp-carousel id="carousel"
         width="620"
         height="400"
