@@ -1,5 +1,7 @@
 # whisper
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/ancientlore/whisper.svg)](https://pkg.go.dev/github.com/ancientlore/whisper)
+
 A web server mainly oriented at media serving for small websites.
 
 ![whisper](example/static/dog.png)

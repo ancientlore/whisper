@@ -1,10 +1,10 @@
 module github.com/ancientlore/whisper
 
-go 1.17
+go 1.19
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/ancientlore/cachefs v1.0.0
+	github.com/ancientlore/cachefs v1.0.1
 	github.com/facebookgo/flagenv v0.0.0-20160425205200-fcd59fca7456
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/pelletier/go-toml/v2 v2.0.6
