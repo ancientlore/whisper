@@ -17,6 +17,14 @@ echo Pushing ancientlore/whisper:$TAG
 docker push ancientlore/whisper:$TAG
 
 echo
+echo Tagging ancientlore/whisper:latest
+docker tag ancientlore/whisper:$TAG ancientlore/whisper:latest
+
+echo
+echo Pushing ancientlore/whisper:latest
+docker push ancientlore/whisper:latest
+
+echo
 echo Tagging ancientlore.registry.cpln.io/whisper:$TAG
 docker tag ancientlore/whisper:$TAG ancientlore.registry.cpln.io/whisper:$TAG
 
