@@ -21,5 +21,5 @@ echo Tagging ancientlore.registry.cpln.io/whisper:$TAG
 docker tag ancientlore/whisper:$TAG ancientlore.registry.cpln.io/whisper:$TAG
 
 echo
-echo Pushing ancientlore.registry.cpln.io/webull:$TAG
+echo Pushing ancientlore.registry.cpln.io/whisper:$TAG
 docker push ancientlore.registry.cpln.io/whisper:$TAG
