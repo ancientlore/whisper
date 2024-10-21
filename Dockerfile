@@ -1,12 +1,12 @@
 ARG GO_VERSION=1.23
 ARG IMG_VERSION=1.23
 
-FROM golang:${GO_VERSION} AS builder
+FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION} AS builder
 WORKDIR /go/src/github.com/ancientlore/whisper
 COPY . .
 RUN go version
-RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go get .
-RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go install
+ARG TARGETOS TARGETARCH
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 go build -o /go/bin/whisper
 
 FROM ancientlore/goimg:${IMG_VERSION}
 COPY --from=builder /go/bin/whisper /usr/local/bin/whisper
