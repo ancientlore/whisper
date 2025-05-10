@@ -9,7 +9,7 @@ require (
 	github.com/ancientlore/cachefs v1.0.7
 	github.com/facebookgo/flagenv v0.0.0-20160425205200-fcd59fca7456
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8
-	github.com/pelletier/go-toml/v2 v2.2.3
+	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/russross/blackfriday/v2 v2.1.0
 )
 
