@@ -1,5 +1,5 @@
-ARG GO_VERSION=1.24
-ARG IMG_VERSION=1.24
+ARG GO_VERSION=1.25
+ARG IMG_VERSION=1.25
 
 FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION} AS builder
 WORKDIR /go/src/github.com/ancientlore/whisper
