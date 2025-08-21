@@ -1,8 +1,6 @@
 module github.com/ancientlore/whisper
 
-go 1.21.0
-
-toolchain go1.23.0
+go 1.25.0
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
