@@ -121,7 +121,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
-	"log"
+	"log/slog"
 	"path"
 	"strings"
 	"sync"
@@ -178,9 +178,10 @@ func (vfs *FS) reloadTemplates(tplReload time.Duration) {
 			return
 		case <-t.C:
 			_, err := vfs.loadTemplates()
-			log.Print("Loaded templates")
 			if err != nil {
-				log.Print(err)
+				slog.Error("Failed to load templates", "error", err)
+			} else {
+				slog.Info("Loaded templates")
 			}
 		}
 	}

@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
-	"log"
+	"log/slog"
 	"path"
 	"sort"
 	"strings"
@@ -66,7 +66,7 @@ func (vfs *FS) newMarkdownFile(f fs.File, pathname string) (fs.File, error) {
 	var wtr bytes.Buffer
 	err = tpl.ExecuteTemplate(&wtr, templateName, data)
 	if err != nil {
-		log.Printf("Error executing template: %s", err)
+		slog.Warn("Error executing markdown template", "error", err)
 	}
 
 	return &virtualFile{
@@ -109,7 +109,7 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 	var wtr bytes.Buffer
 	err = tpl.ExecuteTemplate(&wtr, "image", data)
 	if err != nil {
-		log.Printf("Error executing template: %s", err)
+		slog.Warn("Error executing image template", "error", err)
 	}
 
 	return &virtualFile{
@@ -161,7 +161,7 @@ func (vfs *FS) newSitemapFile(f fs.File, pathname string) (fs.File, error) {
 	err = sitemapTpl.ExecuteTemplate(&wtr, "sitemap", files)
 	if err != nil {
 		wtr.Reset()
-		log.Printf("sitemap: %s", err)
+		slog.Warn("Error executing sitemap template", "error", err)
 	}
 
 	_, bn := path.Split(pathname)

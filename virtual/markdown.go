@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
-	"log"
+	"log/slog"
 	"path"
 	"strings"
 	"time"
@@ -58,7 +58,7 @@ func (vfs *FS) renderMarkdown(filename string) (*FrontMatter, template.HTML, tim
 func (vfs *FS) md(filename string) template.HTML {
 	_, md, _, err := vfs.renderMarkdown(filename)
 	if err != nil {
-		log.Printf("md: %s", err)
+		slog.Error("md failed:", "error", err)
 		return ""
 	}
 	return md
@@ -68,7 +68,7 @@ func (vfs *FS) md(filename string) template.HTML {
 func (vfs *FS) fm(filename string) *FrontMatter {
 	fm, _, _, err := vfs.renderMarkdown(filename)
 	if err != nil {
-		log.Printf("fm: %s", err)
+		slog.Error("fm failed", "error", err)
 		return nil
 	}
 	return fm

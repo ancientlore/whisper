@@ -134,7 +134,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -174,7 +174,7 @@ func main() {
 	if *fWaitForFiles {
 		err := waitForFiles(*fRoot)
 		if err != nil {
-			log.Print(err)
+			slog.Error("Unable to wait for files", "error", err)
 			os.Exit(1)
 		}
 	}
@@ -185,7 +185,7 @@ func main() {
 	// Open root
 	root, err := os.OpenRoot(*fRoot)
 	if err != nil {
-		log.Print(err)
+		slog.Error("Unable to open root folder", "error", err)
 		os.Exit(2)
 	}
 	defer root.Close()
@@ -194,8 +194,8 @@ func main() {
 	// virtualFileSystem, err := virtual.New(os.DirFS(*fRoot))
 	virtualFileSystem, err := virtual.New(root.FS())
 	if err != nil {
-		log.Print(err)
-		os.Exit(2)
+		slog.Error("Unable to create virtual file system", "error", err)
+		os.Exit(3)
 	}
 	defer virtualFileSystem.Close()
 	virtualFileSystem.ReloadTemplates(*fTemplateReload)
@@ -203,8 +203,8 @@ func main() {
 	// get the config
 	cfg, err := virtualFileSystem.Config()
 	if err != nil {
-		log.Print(err)
-		os.Exit(3)
+		slog.Error("Cannot load config", "error", err)
+		os.Exit(4)
 	}
 
 	// Apply config overrides
@@ -223,10 +223,8 @@ func main() {
 	if cfg.CacheSize <= 0 {
 		cfg.CacheSize = 1 // need a default
 	}
-	log.Printf("Expires: %s", cfg.Expires.String())
-	log.Printf("Static Expires: %s", cfg.StaticExpires.String())
-	log.Printf("Cache Size: %dMB", cfg.CacheSize)
-	log.Printf("Cache Duration: %s", cfg.CacheDuration.String())
+	slog.Info("Expirations", "normal", cfg.Expires, "static", cfg.StaticExpires)
+	slog.Info("Cache", "size", fmt.Sprintf("%dMB", cfg.CacheSize), "duration", cfg.CacheDuration.String())
 
 	// Create the cached file system
 	cachedFileSystem := cachefs.New(virtualFileSystem, &cachefs.Config{GroupName: "whisper", SizeInBytes: int64(cfg.CacheSize) * 1024 * 1024, Duration: time.Duration(cfg.CacheDuration)})
@@ -276,18 +274,30 @@ func main() {
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
 			// Error from closing listeners, or context timeout:
-			log.Printf("HTTP server Shutdown: %v", err)
+			slog.Error("HTTP server Shutdown", "error", err)
 		}
 		close(monc)
 	}()
 
 	// Listen for requests
-	log.Print("Listening for requests.")
+	slog.Info("Listening for requests")
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		log.Printf("HTTP server: %v", err)
+		slog.Error("HTTP server", "error", err)
 	} else {
-		log.Print("Goodbye.")
+		slog.Info("Goodbye.")
 	}
+}
+
+type logStats groupcache.CacheStats
+
+func (s logStats) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Int64("items", s.Items),
+		slog.Int64("bytes", s.Bytes),
+		slog.Int64("gets", s.Gets),
+		slog.Int64("hits", s.Hits),
+		slog.Int64("evictions", s.Evictions),
+	)
 }
 
 func stats(groupName string) chan<- bool {
@@ -295,7 +305,7 @@ func stats(groupName string) chan<- bool {
 	g := groupcache.GetGroup(groupName)
 	if g != nil {
 		go func() {
-			t := time.NewTicker(5 * time.Minute)
+			t := time.NewTicker(5 * time.Second)
 			for {
 				select {
 				case _, ok := <-c:
@@ -303,10 +313,9 @@ func stats(groupName string) chan<- bool {
 						return
 					}
 				case <-t.C:
-					s := g.CacheStats(groupcache.HotCache)
-					log.Printf("Hot Cache  %#v", s)
-					s = g.CacheStats(groupcache.MainCache)
-					log.Printf("Main Cache %#v", s)
+					sh := g.CacheStats(groupcache.HotCache)
+					sm := g.CacheStats(groupcache.MainCache)
+					slog.Info("Cache Stats", "hot", logStats(sh), "main", logStats(sm))
 				}
 			}
 		}()
@@ -319,7 +328,7 @@ func waitForFiles(pathname string) error {
 	for i := 0; i < 60; i++ {
 		d, err := os.ReadDir(pathname)
 		if err != nil {
-			log.Printf("os.Dir: %s", err)
+			slog.Warn("os.Dir", "error", err)
 		} else if len(d) > 0 {
 			var dir []string
 			var hasError bool
@@ -331,18 +340,18 @@ func waitForFiles(pathname string) error {
 					if entry.Name() == "cpln-error.txt" {
 						hasError = true
 						errData, err := os.ReadFile(path.Join(pathname, "cpln-error.txt"))
-						log.Printf("cpln-error.txt: %s %v", errData, err)
+						slog.Warn("cpln-error.txt", "cpln-error", errData, "error", err)
 					}
 				}
 			}
-			log.Printf("Found files %v", dir)
+			slog.Info("Found", "files", dir)
 			if !hasError {
 				foundFiles = true
 				break
 			}
 		}
 		if i%10 == 0 {
-			log.Print("Waiting for files...")
+			slog.Info("Waiting for files...")
 		}
 		time.Sleep(time.Second)
 	}

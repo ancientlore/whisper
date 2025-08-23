@@ -3,7 +3,7 @@ package virtual
 import (
 	"errors"
 	"io/fs"
-	"log"
+	"log/slog"
 	"path"
 	"sort"
 	"strings"
@@ -21,7 +21,7 @@ func (vfs *FS) dir(folderpath string) []File {
 	folderpath = path.Clean(folderpath)
 	entries, err := fs.ReadDir(vfs, folderpath)
 	if err != nil {
-		log.Printf("dir: %s", err)
+		slog.Error("dir: ReadDir failed", "error", err)
 		return nil
 	}
 	f := make([]File, 0, len(entries))
@@ -38,7 +38,7 @@ func (vfs *FS) dir(folderpath string) []File {
 				err = vfs.readFrontMatter(path.Join(folderpath, strings.TrimSuffix(entry.Name(), ".html")+".md"), &fm)
 				if err != nil {
 					if !errors.Is(err, fs.ErrNotExist) {
-						log.Printf("readDir: %s", err)
+						slog.Warn("readDir problem reading front matter", "error", err)
 					} else if hasImageFolderPrefix(folderpath) {
 						extensions := []string{".png", ".jpg", ".gif", ".webp", ".jpeg"}
 						newNm := strings.TrimSuffix(entry.Name(), path.Ext(entry.Name()))
@@ -97,7 +97,7 @@ func match(s string, pat ...string) bool {
 	for i := range pat {
 		b, err := path.Match(pat[i], s)
 		if err != nil {
-			log.Printf("match: %s", err)
+			slog.Error("match failed", "error", err)
 		}
 		if b {
 			return true
