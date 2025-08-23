@@ -139,6 +139,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"strings"
 	"syscall"
 	"time"
 
@@ -166,16 +167,29 @@ func main() {
 		fExpires           = flag.Duration("expires", 0, "Default cache-control max-age header.")
 		fStaticExpires     = flag.Duration("staticexpires", 0, "Default cache-control max-age header for static content.")
 		fWaitForFiles      = flag.Bool("wait", false, "Wait for files to appear in root folder before starting up.")
+		fLogger            = flag.String("logger", "", "Select JSON or text logger.")
 	)
 	flag.Parse()
 	flagenv.Parse()
+
+	// Pick logger
+	switch strings.ToLower(*fLogger) {
+	case "":
+	case "text":
+		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
+	case "json":
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
+	default:
+		slog.Error("Invalid logger type: select \"text\" or \"json\"")
+		os.Exit(1)
+	}
 
 	// If requested, wait for files to show up in root folder, up to 60 seconds
 	if *fWaitForFiles {
 		err := waitForFiles(*fRoot)
 		if err != nil {
 			slog.Error("Unable to wait for files", "error", err)
-			os.Exit(1)
+			os.Exit(2)
 		}
 	}
 
@@ -186,7 +200,7 @@ func main() {
 	root, err := os.OpenRoot(*fRoot)
 	if err != nil {
 		slog.Error("Unable to open root folder", "error", err)
-		os.Exit(2)
+		os.Exit(3)
 	}
 	defer root.Close()
 
@@ -195,7 +209,7 @@ func main() {
 	virtualFileSystem, err := virtual.New(root.FS())
 	if err != nil {
 		slog.Error("Unable to create virtual file system", "error", err)
-		os.Exit(3)
+		os.Exit(4)
 	}
 	defer virtualFileSystem.Close()
 	virtualFileSystem.ReloadTemplates(*fTemplateReload)
@@ -204,7 +218,7 @@ func main() {
 	cfg, err := virtualFileSystem.Config()
 	if err != nil {
 		slog.Error("Cannot load config", "error", err)
-		os.Exit(4)
+		os.Exit(5)
 	}
 
 	// Apply config overrides
@@ -305,7 +319,7 @@ func stats(groupName string) chan<- bool {
 	g := groupcache.GetGroup(groupName)
 	if g != nil {
 		go func() {
-			t := time.NewTicker(5 * time.Second)
+			t := time.NewTicker(5 * time.Minute)
 			for {
 				select {
 				case _, ok := <-c:
