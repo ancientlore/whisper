@@ -144,10 +144,10 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/ancientlore/flagenv"
 	"github.com/ancientlore/whisper/cachefs"
 	"github.com/ancientlore/whisper/virtual"
 	"github.com/ancientlore/whisper/web"
-	"github.com/facebookgo/flagenv"
 	"github.com/golang/groupcache"
 )
 
@@ -170,7 +170,7 @@ func main() {
 		fLogger            = flag.String("logger", "", "Select JSON or text logger.")
 	)
 	flag.Parse()
-	flagenv.Parse()
+	flagenv.Parse("")
 
 	// Pick logger
 	switch strings.ToLower(*fLogger) {
