@@ -7,8 +7,9 @@ A special file "whisper.cfg" at the root exposes settings you can use via the Co
 This file is hidden from view.
 
 A special folder "template" at the root holds HTML templates should you want to customize. At
-minimum, a template called "default" is required for handling Markdown files, and a template
-called "image" is required for handling image files.
+minimum, a template called "default" is required for handling Markdown files, a template
+called "image" is required for handling image files, and a template called "video" is required
+for handling video files.
 
 Hidden files and folders (those starting with ".") are ignored.
 
@@ -27,7 +28,9 @@ file is found, a virtual file "/foo/bar.html" is created that will render an HTM
 The underlying image file is not hidden, because it needs to be served for the HTML. Note that this
 special image handling only happens when the top-level folder is one of the following:
 
-	"photos", "images", "pictures", "cartoons", "toons", "sketches", "artwork", "drawings"
+	"photos", "images", "pictures", "cartoons", "toons", "sketches", "artwork", "drawings", "videos", "movies"
+
+Similarly, a video file (MP4, MOV, WEBM) will be handled by rendering an HTML file using the "video" template.
 
 # Site Map
 
@@ -60,8 +63,8 @@ Front matter may include:
 
 # Templates
 
-The system uses standard Go templates from the `html/template` package, and includes two default templates,
-"default" and "image". Templates are stored in the "template" top-level folder with the extension ".html".
+The system uses standard Go templates from the `html/template` package, and includes three default templates,
+"default", "image", and "video". Templates are stored in the "template" top-level folder with the extension ".html".
 
 Templates are passed page information (virtual.PageInfo), front matter (virtual.FrontMatter), and rendered HTML from
 Markdown (template.HTML), and can use these data elements in their processing. Template also make
@@ -212,9 +215,9 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 	if err != nil {
 		// for files that don't exist, check for underlying matching files
 		if errors.Is(err, fs.ErrNotExist) && path.Ext(name) == ".html" {
-			extensions := []string{".md", ".png", ".jpg", ".gif", ".webp", ".jpeg"}
-			// if it's not in an image folder, only check markdown files
-			if !hasImageFolderPrefix(name) {
+			extensions := []string{".md", ".png", ".jpg", ".gif", ".webp", ".jpeg", ".mp4", ".mov", ".webm"}
+			// if it's not in an media folder, only check markdown files
+			if !hasMediaFolderPrefix(name) {
 				extensions = extensions[:1]
 			}
 			newNm := strings.TrimSuffix(name, path.Ext(name))
@@ -224,9 +227,12 @@ func (vfs *FS) Open(name string) (fs.File, error) {
 				if err2 == nil {
 					// match found, so return a virtual file
 					defer f.Close()
-					if ext == ".md" {
+					switch ext {
+					case ".md":
 						return vfs.newMarkdownFile(f, newNm+".html")
-					} else {
+					case ".mp4", ".mov", ".webm":
+						return vfs.newVideoFile(f, newNm+".html")
+					default:
 						return vfs.newImageFile(f, newNm+".html")
 					}
 				}

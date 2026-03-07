@@ -20,9 +20,9 @@ See the [example](example) folder for a sample site layout. In general, _whisper
 
 ## Markdown
 
-Web pages are generally written in Markdown and use HTML templates to render into the site. The default template to use is called `default`; you must have a `default` template and an `image` template.  Templates are stored in the `template` folder.
+Web pages are generally written in Markdown and use HTML templates to render into the site. The default template to use is called `default`; you must have a `default` template and an `image` template. A "video" template is also needed for video files. Templates are stored in the `template` folder.
 
-> NOTE: If no `template` folder is found, then default templates are loaded named `default` and `image`. You probably don't want these because they are extremely basic, but it's okay for just messing around and viewing Markdown locally.
+> NOTE: If no `template` folder is found, then default templates are loaded named `default`, `image`, and `video`. You probably don't want these because they are extremely basic, but it's okay for just messing around and viewing Markdown locally.
 
 Markdown may contain *front matter* which is in TOML format. The front matter is delimited by `+++` at the start and end. For example:
 
@@ -108,9 +108,9 @@ If `File` is not a Markdown file, then `FrontMatter.Title` is set to the file na
 
 Note that `FrontMatter.OriginalFile` is very useful because, for image templates, it will hold the name of the image file. You probably want to use it in the template.
 
-### Image Templates
+### Media Templates
 
-Folders named `photos`, `images`, `pictures`, `cartoons`, `toons`, `sketches`, `artwork`, or `drawings` use a special handler that can serve images using an HTML template called `image`.
+Folders named `photos`, `images`, `pictures`, `cartoons`, `toons`, `sketches`, `artwork`, `drawings`, `videos`, or `movies` use a special handler that can serve images using an HTML template called `image` or `video`.
 
 ## Non-Goals
 

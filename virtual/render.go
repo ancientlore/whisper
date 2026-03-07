@@ -123,6 +123,49 @@ func (vfs *FS) newImageFile(f fs.File, pathname string) (fs.File, error) {
 	}, nil
 }
 
+// newVideoFile reads the underlying video file, creates front matter,
+// and executes the specified template, returning the resulting
+// virtualFile.
+func (vfs *FS) newVideoFile(f fs.File, pathname string) (fs.File, error) {
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	// prepare template data
+	p, bn := path.Split(pathname)
+	var data = data{
+		FrontMatter: FrontMatter{
+			Title:        strings.TrimSuffix(fi.Name(), path.Ext(fi.Name())),
+			Date:         fi.ModTime().Local(),
+			Template:     "video",
+			OriginalFile: fi.Name(), // allows reference to image in template
+		},
+		Page: PageInfo{
+			Path:     "/" + p,
+			Filename: bn,
+		},
+	}
+
+	// Render the HTML template
+	tpl := vfs.getTemplates()
+	var wtr bytes.Buffer
+	err = tpl.ExecuteTemplate(&wtr, "video", data)
+	if err != nil {
+		slog.Warn("Error executing video template", "error", err)
+	}
+
+	return &virtualFile{
+		fi: fileInfo{
+			nm: bn,
+			sz: int64(wtr.Len()),
+			md: fi.Mode(),
+			mt: time.Now(), // needs to be more dynamic than fi.ModTime(),
+		},
+		reader: bytes.NewReader(wtr.Bytes()),
+	}, nil
+}
+
 // newSitemapFile parses the underlying text file as a template, reads the
 // directory listing, and executes the template, returning the resulting
 // virtualFile.
@@ -215,7 +258,7 @@ func (vfs *FS) newDirectory(f fs.File, pathname string) (fs.File, error) {
 				vEntries = append(vEntries, fs.FileInfoToDirEntry(fileInfo{nm: newNm, sz: info.Size(), md: info.Mode(), mt: info.ModTime()}))
 				added[newNm] = true
 			}
-		case hasImageExtension(nm) && hasImageFolderPrefix(pathname):
+		case hasMediaExtension(nm) && hasMediaFolderPrefix(pathname):
 			info, err := entry.Info()
 			if err != nil {
 				return nil, err

@@ -39,8 +39,8 @@ func (vfs *FS) dir(folderpath string) []File {
 				if err != nil {
 					if !errors.Is(err, fs.ErrNotExist) {
 						slog.Warn("readDir problem reading front matter", "error", err)
-					} else if hasImageFolderPrefix(folderpath) {
-						extensions := []string{".png", ".jpg", ".gif", ".webp", ".jpeg"}
+					} else if hasMediaFolderPrefix(folderpath) {
+						extensions := []string{".png", ".jpg", ".gif", ".webp", ".jpeg", ".mp4", ".mov", ".webm"}
 						newNm := strings.TrimSuffix(entry.Name(), path.Ext(entry.Name()))
 						// find file with matching extension
 						for _, ext := range extensions {

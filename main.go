@@ -112,8 +112,8 @@ want to use it in the template.
 
 # Image Templates
 
-Folders named "photos", "images", "pictures", "cartoons", "toons", "sketches", "artwork", or "drawings" use a special handler that can
-serve images using an HTML template called "image".
+Folders named "photos", "images", "pictures", "cartoons", "toons", "sketches", "artwork", "drawings", "videos", or "movies" use a special handler that can
+serve media using an HTML template called "image" or "video".
 
 # Non-Goals
 
